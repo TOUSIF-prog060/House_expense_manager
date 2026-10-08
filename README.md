@@ -58,10 +58,6 @@ Authentication is disabled. All visitors share one fixed identity and have the s
 
 The target workbook is **MR HEIGHTS** (`1AhliDIzXqOsaKW_81IX50tX40WaD7dlgjFwE64Z-hIY`). The server client is in `src/lib/backend/google-sheets.ts`; it uses a Google service account and never exposes its credentials to browser code. Add these values to `.env.local` (do not commit that file):
 
-```env
-GOOGLE_SHEETS_ID=1AhliDIzXqOsaKW_81IX50tX40WaD7dlgjFwE64Z-hIY
-GOOGLE_SERVICE_ACCOUNT_JSON={"type":"service_account", ...}
-```
 
 Create a service account in a Google Cloud project, enable the Google Sheets API, create a JSON key, and share **MR HEIGHTS** with the service account's `client_email` as an editor. Keep the key private. After setting the variables, open Household settings and choose **Initialize Google Sheets** (or send `POST /api/backend/setup`) to create the app tabs and header rows. Setup is idempotent. It leaves the existing `Sheet1` untouched and fails safely if an app tab already has unexpected headers.
 
