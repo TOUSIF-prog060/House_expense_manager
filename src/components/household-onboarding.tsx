@@ -1,0 +1,10 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+export function HouseholdOnboarding() {
+  const router=useRouter(); const [name,setName]=useState(''); const [code,setCode]=useState(''); const [error,setError]=useState(''); const [busy,setBusy]=useState(false);
+  async function run(kind:'create'|'join') { setBusy(true);setError('');if(!navigator.onLine){setError('Reconnect to continue.');setBusy(false);return;}try{const response=await fetch(kind==='create'?'/api/backend/households':'/api/backend/households/join',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(kind==='create'?{name:name.trim(),timezone:'Asia/Kolkata'}:{code:code.trim()})});const result=await response.json() as {error?:string};if(!response.ok)throw new Error(result.error??'Could not save your household.');router.push('/home');router.refresh()}catch(error){setError(error instanceof Error?error.message:'Could not save your household.');}finally{setBusy(false)} }
+  return <div className="onboarding-grid"><section className="onboarding-card"><span className="card-eyebrow">START A HOME</span><h2>Create your household</h2><p>Bring shared expenses and daily cat care into one place.</p><label className="field"><span>Household name</span><input maxLength={80} placeholder="Our Apartment" value={name} onChange={(event)=>setName(event.target.value)}/></label><button className="button button-primary button-full" disabled={busy||!name.trim()} onClick={()=>run('create')}>Create household</button></section><div className="onboarding-or">or</div><section className="onboarding-card"><span className="card-eyebrow">JOIN A HOME</span><h2>Have an invite code?</h2><p>Ask your household admin for a one-time code.</p><label className="field"><span>Invite code</span><input maxLength={32} placeholder="HOME-X7A92K" value={code} onChange={(event)=>setCode(event.target.value.toUpperCase())}/></label><button className="button button-secondary button-full" disabled={busy||!code.trim()} onClick={()=>run('join')}>Join household</button></section>{error&&<p className="form-error form-wide" role="alert">{error}</p>}</div>;
+}
