@@ -11,9 +11,9 @@ if (typeof window !== 'undefined') {
  */
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const secretKey = process.env.SUPABASE_SECRET_KEY;
+  const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !secretKey) {
-    throw new Error('Supabase admin is not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY to your server environment.');
+    throw new Error('Supabase admin is not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) to your server environment.');
   }
   return createClient<Database>(url, secretKey, {
     auth: {
