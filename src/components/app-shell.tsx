@@ -17,6 +17,8 @@ const navItems = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [online, setOnline] = useState(true);
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -29,6 +31,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    setPendingPath(null);
+    setIsNavigating(false);
+  }, [pathname]);
+
   const authPage = ['/', '/login', '/signup', '/forgot-password', '/update-password'].includes(pathname);
   if (authPage) return <>{children}</>;
 
@@ -38,8 +45,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.location.assign('/login');
   }
 
+  const currentPath = pendingPath ?? pathname;
+
+  const isLinkActive = (href: string) => {
+    return (
+      currentPath === href ||
+      (href === '/expenses' && currentPath.startsWith('/expenses') && currentPath !== '/expenses/new')
+    );
+  };
+
+  const handleNavClick = (href: string) => {
+    if (pathname !== href) {
+      setPendingPath(href);
+      setIsNavigating(true);
+    }
+  };
+
   return (
     <div className="app-frame">
+      {isNavigating && <div className="nav-progress-bar" aria-hidden="true" />}
       {!online && (
         <div className="offline-banner" role="status">
           You’re offline. Reconnect before saving household changes.
@@ -47,15 +71,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
       <header className="topbar">
         <div className="topbar-inner">
-          <Link className="brand" href="/home">
+          <Link className="brand" href="/home" prefetch={true} onClick={() => handleNavClick('/home')}>
             <span className="brand-mark"><House size={19} /></span>
             <span>Expense Manager<span className="brand-dot">.</span></span>
           </Link>
           <div className="top-actions">
-            <Link className="icon-button" href="/notifications" aria-label="Notifications">
+            <Link className="icon-button" href="/notifications" prefetch={true} aria-label="Notifications">
               <Bell size={19} />
             </Link>
-            <Link className="avatar-mini" href="/profile" aria-label="Profile">
+            <Link className="avatar-mini" href="/profile" prefetch={true} aria-label="Profile">
               Y
             </Link>
             <button className="icon-button desktop-logout" onClick={signOut} aria-label="Sign out">
@@ -71,20 +95,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {navItems.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
-                className={`nav-link ${
-                  pathname === href || (href === '/expenses' && pathname.startsWith('/expenses') && pathname !== '/expenses/new')
-                    ? 'active'
-                    : ''
-                }`}
+                className={`nav-link ${isLinkActive(href) ? 'active' : ''}`}
                 href={href}
+                prefetch={true}
+                onClick={() => handleNavClick(href)}
               >
                 <Icon size={19} />
                 <span>{label}</span>
               </Link>
             ))}
             <Link
-              className={`nav-link add-expense-nav ${pathname === '/expenses/new' ? 'active' : ''}`}
+              className={`nav-link add-expense-nav ${currentPath === '/expenses/new' ? 'active' : ''}`}
               href="/expenses/new"
+              prefetch={true}
+              onClick={() => handleNavClick('/expenses/new')}
             >
               <Plus size={19} />
               <span>Add expense</span>
@@ -98,18 +122,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav className="bottom-nav" aria-label="Main navigation">
-        {navItems.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            className={`bottom-link ${
-              pathname === href || (href === '/expenses' && pathname.startsWith('/expenses')) ? 'active' : ''
-            }`}
-            href={href}
-          >
-            <Icon size={21} />
-            <span>{label}</span>
-          </Link>
-        ))}
+        {navItems.map(({ href, label, icon: Icon }) => {
+          const active = isLinkActive(href);
+          const isPending = pendingPath === href;
+          return (
+            <Link
+              key={href}
+              className={`bottom-link ${active ? 'active' : ''} ${isPending ? 'pending-nav' : ''}`}
+              href={href}
+              prefetch={true}
+              onClick={() => handleNavClick(href)}
+            >
+              <Icon size={21} />
+              <span>{label}</span>
+            </Link>
+          );
+        })}
       </nav>
     </div>
   );

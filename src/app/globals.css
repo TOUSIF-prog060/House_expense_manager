@@ -2352,17 +2352,31 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     align-items: center;
     justify-content: center;
     gap: 4px;
-    border-radius: 10px;
+    border-radius: 12px;
     color: var(--muted);
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease, background 0.15s ease;
+    padding: 4px 0;
   }
-  .bottom-link.active {
+  .bottom-link:active {
+    transform: scale(0.91);
+    background: color-mix(in srgb, var(--line) 30%, transparent);
+  }
+  .bottom-link.active,
+  .bottom-link.pending-nav {
     color: var(--green);
     font-weight: 700;
   }
-  .bottom-link.active svg {
+  .bottom-link.active svg,
+  .bottom-link.pending-nav svg {
     stroke-width: 2.4;
+  }
+  .bottom-link.pending-nav svg {
+    animation: navPulse 0.7s ease-in-out infinite alternate;
   }
   .dashboard-grid {
     grid-template-columns: 1fr;
@@ -2402,4 +2416,109 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     right: 12px;
     bottom: 76px;
   }
+}
+
+/* === Mobile Touch & Responsiveness Enhancements === */
+.bottom-link,
+.nav-link,
+.button,
+.icon-button,
+.cat-slot-card,
+.recent-row,
+.quick-action,
+.text-link {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* === Fast Page Transition Progress Bar === */
+.nav-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #059669 100%);
+  background-size: 200% 100%;
+  animation: navProgress 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 1px 6px rgba(16, 185, 129, 0.4);
+}
+
+@keyframes navProgress {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes navPulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+/* === Shimmer Loading Skeleton Styles === */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--line) 40%, transparent) 0%,
+    color-mix(in srgb, var(--line) 85%, transparent) 50%,
+    color-mix(in srgb, var(--line) 40%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-text {
+  height: 14px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.skeleton-title {
+  height: 24px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.skeleton-badge {
+  height: 22px;
+  width: 60px;
+  border-radius: 20px;
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }

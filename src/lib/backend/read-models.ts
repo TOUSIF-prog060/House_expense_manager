@@ -1,6 +1,7 @@
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 
-export async function getHouseholdForUser(userId: string) {
+export const getHouseholdForUser = cache(async (userId: string) => {
   const supabase = await createClient();
 
   const { data: membership } = await supabase
@@ -51,4 +52,4 @@ export async function getHouseholdForUser(userId: string) {
     profiles: profiles ?? [],
     members: activeMembers,
   };
-}
+});

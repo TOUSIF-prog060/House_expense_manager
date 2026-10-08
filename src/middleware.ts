@@ -44,7 +44,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/home', request.url));
   }
 
-  response.headers.set('Cache-Control', 'private, no-store');
   return response;
 }
 
