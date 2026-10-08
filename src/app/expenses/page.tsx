@@ -6,11 +6,18 @@ import { createClient } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { formatRupees } from '@/lib/calculations/money';
 import { monthStartInTimezone } from '@/lib/dates';
+import { ExpenseDateFilter } from '@/components/expense-date-filter';
 import { HouseholdRealtimeListener } from '@/components/household-realtime-listener';
 
 export const metadata: Metadata = { title: 'Expenses' };
 
-export default async function ExpensesPage() {
+export default async function ExpensesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const { date: paramDate } = await searchParams;
+
   let auth;
   try {
     auth = await createClient();
@@ -34,13 +41,22 @@ export default async function ExpensesPage() {
     );
   }
 
+  const selectedDate = paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) ? paramDate : undefined;
+
+  let expensesQuery = supabase
+    .from('expenses')
+    .select('*')
+    .eq('household_id', household.id)
+    .order('expense_date', { ascending: false });
+
+  if (selectedDate) {
+    expensesQuery = expensesQuery.eq('expense_date', selectedDate);
+  } else {
+    expensesQuery = expensesQuery.limit(100);
+  }
+
   const [expensesRes, sharesRes, categoriesRes] = await Promise.all([
-    supabase
-      .from('expenses')
-      .select('*')
-      .eq('household_id', household.id)
-      .order('expense_date', { ascending: false })
-      .limit(100),
+    expensesQuery,
     supabase
       .from('expense_shares')
       .select('*'),
@@ -63,12 +79,20 @@ export default async function ExpensesPage() {
   const mine = shares.filter((row) => row.user_id === user.id);
   const myShares = new Map(mine.map((row) => [row.expense_id, Math.round(Number(row.share_amount) * 100)]));
 
-  const filtered = expenses.filter((expense) => expense.expense_date >= monthStart);
-  const total = filtered.reduce((sum, expense) => sum + Math.round(Number(expense.amount) * 100), 0);
-  const personal = filtered.reduce((sum, expense) => sum + (myShares.get(expense.id) ?? 0), 0);
-  const paid = filtered
+  const total = expenses.reduce((sum, expense) => sum + Math.round(Number(expense.amount) * 100), 0);
+  const personal = expenses.reduce((sum, expense) => sum + (myShares.get(expense.id) ?? 0), 0);
+  const paid = expenses
     .filter((expense) => expense.paid_by === user.id)
     .reduce((sum, expense) => sum + Math.round(Number(expense.amount) * 100), 0);
+
+  const formattedSelectedDate = selectedDate
+    ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString('en', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : null;
 
   return (
     <div className="page-wrap">
@@ -79,33 +103,42 @@ export default async function ExpensesPage() {
           <h1>Expenses</h1>
           <p>Everything shared, all in one place.</p>
         </div>
-        <Link className="button button-primary" href="/expenses/new">
+        <Link
+          className="button button-primary"
+          href={selectedDate ? `/expenses/new?date=${selectedDate}` : '/expenses/new'}
+        >
           <Plus size={17} /> Add expense
         </Link>
       </div>
 
       <div className="stat-grid">
         <div className="stat-card stat-highlight">
-          <span>{now.toLocaleDateString('en', { month: 'long', timeZone: household.timezone })} total</span>
+          <span>{selectedDate ? `${formattedSelectedDate} total` : `${now.toLocaleDateString('en', { month: 'long', timeZone: household.timezone })} total`}</span>
           <strong>{formatRupees(total)}</strong>
-          <small>Shared household spending</small>
+          <small>{selectedDate ? 'Expenses on this date' : 'Shared household spending'}</small>
         </div>
         <div className="stat-card">
           <span>Your share</span>
           <strong>{formatRupees(personal)}</strong>
-          <small>Across {filtered.length} expenses</small>
+          <small>{selectedDate ? `For this date` : `Across ${expenses.length} expenses`}</small>
         </div>
         <div className="stat-card">
           <span>You paid</span>
           <strong>{formatRupees(paid)}</strong>
-          <small>This month</small>
+          <small>{selectedDate ? `On this date` : 'This month'}</small>
         </div>
       </div>
 
+      <ExpenseDateFilter
+        currentDate={selectedDate}
+        totalFilteredRecords={expenses.length}
+        totalAmountPaise={total}
+      />
+
       <div className="list-heading">
         <div>
-          <h2>All expenses</h2>
-          <p>Most recent first</p>
+          <h2>{selectedDate ? `Expenses on ${formattedSelectedDate}` : 'All expenses'}</h2>
+          <p>{selectedDate ? `${expenses.length} recorded on this date` : 'Most recent first'}</p>
         </div>
         <span className="filter-chip">
           <Search size={14} /> {expenses.length} records
@@ -144,11 +177,21 @@ export default async function ExpensesPage() {
       ) : (
         <div className="empty-state list-empty">
           <ReceiptText size={26} />
-          <h3>No expenses yet</h3>
-          <p>Add your first shared expense.</p>
-          <Link className="button button-primary" href="/expenses/new">
-            Add expense <ArrowRight size={16} />
-          </Link>
+          <h3>{selectedDate ? `No expenses on ${formattedSelectedDate}` : 'No expenses yet'}</h3>
+          <p>{selectedDate ? 'No shared expenses were recorded for this date.' : 'Add your first shared expense.'}</p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+            <Link
+              className="button button-primary"
+              href={selectedDate ? `/expenses/new?date=${selectedDate}` : '/expenses/new'}
+            >
+              Add expense <ArrowRight size={16} />
+            </Link>
+            {selectedDate && (
+              <Link className="button button-secondary" href="/expenses">
+                View all expenses
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </div>

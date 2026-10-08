@@ -24,7 +24,7 @@ export default async function CatHistoryPage() {
 
   const since = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
 
-  const [feedingsRes, slotsRes] = await Promise.all([
+  const [feedingsRes, slotsRes, petsRes] = await Promise.all([
     supabase
       .from('cat_feedings')
       .select('*')
@@ -36,13 +36,19 @@ export default async function CatHistoryPage() {
       .from('meal_slots')
       .select('*')
       .eq('household_id', household.id),
+    supabase
+      .from('pets')
+      .select('*')
+      .eq('household_id', household.id),
   ]);
 
   const history = feedingsRes.data ?? [];
   const slots = slotsRes.data ?? [];
+  const pets = petsRes.data ?? [];
 
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile.display_name]));
   const slotMap = new Map(slots.map((slot) => [slot.id, slot.name]));
+  const petMap = new Map(pets.map((pet) => [pet.id, pet.name]));
 
   const groups = new Map<string, typeof history>();
   for (const row of history) {
@@ -64,39 +70,49 @@ export default async function CatHistoryPage() {
       {groups.size ? (
         Array.from(groups.entries()).map(([date, items]) => (
           <section className="history-date-group" key={date}>
-            <h2>
-              {new Date(`${date}T12:00:00`).toLocaleDateString('en', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}
-            </h2>
-            {items.map((meal) => (
-              <article className="history-row" key={meal.id}>
-                <span className="history-paw">
-                  <PawPrint size={15} />
-                </span>
-                <span className="recent-main">
-                  <strong>
-                    {meal.feeding_type === 'extra'
-                      ? 'Extra feeding'
-                      : slotMap.get(meal.meal_slot_id ?? '') ?? 'Meal'}
-                  </strong>
-                  <span>
-                    {profileMap.get(meal.fed_by) ?? 'A member'}
-                    {meal.note ? ` · ${meal.note}` : ''}
+            <div className="history-group-header">
+              <h2>
+                {new Date(`${date}T12:00:00`).toLocaleDateString('en', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })}
+              </h2>
+              <Link href={`/cat?date=${date}`} className="text-link history-day-link">
+                View day schedule →
+              </Link>
+            </div>
+            {items.map((meal) => {
+              const petLabel = meal.pet_id ? petMap.get(meal.pet_id) : null;
+              const slotLabel = meal.feeding_type === 'extra'
+                ? 'Extra feeding'
+                : slotMap.get(meal.meal_slot_id ?? '') ?? 'Meal';
+              return (
+                <article className="history-row" key={meal.id}>
+                  <span className="history-paw">
+                    <PawPrint size={15} />
                   </span>
-                </span>
-                <span className="history-time">
-                  <Clock3 size={13} />
-                  {new Date(meal.fed_at).toLocaleTimeString([], {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    timeZone: household.timezone,
-                  })}
-                </span>
-              </article>
-            ))}
+                  <span className="recent-main">
+                    <strong>
+                      {slotLabel}
+                      {petLabel && <span className="history-pet-badge"> · {petLabel}</span>}
+                    </strong>
+                    <span>
+                      {profileMap.get(meal.fed_by) ?? 'A member'}
+                      {meal.note ? ` · ${meal.note}` : ''}
+                    </span>
+                  </span>
+                  <span className="history-time">
+                    <Clock3 size={13} />
+                    {new Date(meal.fed_at).toLocaleTimeString([], {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      timeZone: household.timezone,
+                    })}
+                  </span>
+                </article>
+              );
+            })}
           </section>
         ))
       ) : (

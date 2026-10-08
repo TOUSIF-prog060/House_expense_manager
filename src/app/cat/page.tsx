@@ -8,11 +8,18 @@ import { dateKeyInTimezone } from '@/lib/dates';
 import { FeedButton } from '@/components/feed-button';
 import { ExtraFeedingButton } from '@/components/extra-feeding-button';
 import { PetManager } from '@/components/pet-manager';
+import { DateNavigator } from '@/components/date-navigator';
 import { HouseholdRealtimeListener } from '@/components/household-realtime-listener';
 
 export const metadata: Metadata = { title: 'Cat care' };
 
-export default async function CatPage() {
+export default async function CatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const { date: paramDate } = await searchParams;
+
   let auth;
   try {
     auth = await createClient();
@@ -26,7 +33,9 @@ export default async function CatPage() {
   const { supabase, household, profiles } = householdData;
   if (!household) redirect('/onboarding');
 
-  const day = dateKeyInTimezone(new Date(), household.timezone);
+  const todayKey = dateKeyInTimezone(new Date(), household.timezone);
+  const selectedDay = paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) ? paramDate : todayKey;
+  const isToday = selectedDay === todayKey;
 
   const [slotsRes, feedingsRes, historyRes, petsRes] = await Promise.all([
     supabase
@@ -38,7 +47,7 @@ export default async function CatPage() {
       .from('cat_feedings')
       .select('*')
       .eq('household_id', household.id)
-      .eq('feeding_date', day)
+      .eq('feeding_date', selectedDay)
       .eq('feeding_type', 'scheduled'),
     supabase
       .from('cat_feedings')
@@ -84,12 +93,13 @@ export default async function CatPage() {
       <section className="cat-today-panel">
         <div className="cat-date-heading">
           <div>
-            <span className="eyebrow">TODAY</span>
+            <span className="eyebrow">{isToday ? 'TODAY' : 'DATE ARCHIVE'}</span>
             <h2>
-              {new Date(`${day}T12:00:00`).toLocaleDateString('en', {
+              {new Date(`${selectedDay}T12:00:00`).toLocaleDateString('en', {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
+                year: 'numeric',
               })}
             </h2>
           </div>
@@ -97,6 +107,8 @@ export default async function CatPage() {
             {feedings.length} of {totalExpectedMeals} meals done
           </span>
         </div>
+
+        <DateNavigator currentDate={selectedDay} todayDate={todayKey} baseUrl="/cat" />
 
         <div className="cat-slot-list">
           {slots.map((slot, index) => {
@@ -160,7 +172,7 @@ export default async function CatPage() {
                               householdId={household.id}
                               slotId={slot.id}
                               slotName={slot.name}
-                              feedingDate={day}
+                              feedingDate={selectedDay}
                               petId={pet.id}
                               petName={pet.name}
                               alreadyFed={Boolean(feeding)}
@@ -202,7 +214,7 @@ export default async function CatPage() {
                     householdId={household.id}
                     slotId={slot.id}
                     slotName={slot.name}
-                    feedingDate={day}
+                    feedingDate={selectedDay}
                     alreadyFed={Boolean(feeding)}
                   />
                 </div>

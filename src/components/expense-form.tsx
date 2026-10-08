@@ -9,11 +9,11 @@ import { expenseSchema } from '@/lib/validation/schemas';
 type Person = { userId: string; name: string };
 type Category = { id: string; name: string; is_pet: boolean };
 const petCategory = (name: string) => name.toLowerCase().startsWith('cat ');
-export function ExpenseForm({ householdId, people, categories, currentUserId }: { householdId: string; people: Person[]; categories: Category[]; currentUserId: string }) {
+export function ExpenseForm({ householdId, people, categories, currentUserId, initialDate }: { householdId: string; people: Person[]; categories: Category[]; currentUserId: string; initialDate?: string }) {
   const router = useRouter();
   const [title, setTitle] = useState(''); const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? ''); const [paidBy, setPaidBy] = useState(currentUserId);
-  const [date, setDate] = useState(new Date().toLocaleDateString('en-CA')); const [notes, setNotes] = useState('');
+  const [date, setDate] = useState(initialDate || new Date().toLocaleDateString('en-CA')); const [notes, setNotes] = useState('');
   const [method, setMethod] = useState<SplitMethod>('equal'); const [participantIds, setParticipantIds] = useState<string[]>(people.map((person) => person.userId));
   const [values, setValues] = useState<Record<string, string>>({}); const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState('');

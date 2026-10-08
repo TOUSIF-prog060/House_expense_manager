@@ -8,7 +8,13 @@ import { ExpenseForm } from '@/components/expense-form';
 
 export const metadata: Metadata = { title: 'Add an expense' };
 
-export default async function NewExpensePage() {
+export default async function NewExpensePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const { date: paramDate } = await searchParams;
+
   let auth;
   try {
     auth = await createClient();
@@ -38,9 +44,11 @@ export default async function NewExpensePage() {
     name: profiles.find((profile) => profile.id === member.user_id)?.display_name || 'Housemate',
   }));
 
+  const initialDate = paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) ? paramDate : undefined;
+
   return (
     <div className="page-wrap form-page">
-      <Link className="back-link" href="/expenses">
+      <Link className="back-link" href={initialDate ? `/expenses?date=${initialDate}` : '/expenses'}>
         <ArrowLeft size={16} /> All expenses
       </Link>
       <div className="page-heading">
@@ -54,6 +62,7 @@ export default async function NewExpensePage() {
           people={people}
           categories={categories}
           currentUserId={user.id}
+          initialDate={initialDate}
         />
       </section>
     </div>
