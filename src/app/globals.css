@@ -1515,6 +1515,237 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   filter: brightness(1.08);
 }
 
+/* === Multi-Cat Tracking Styles === */
+.cat-slot-card.cat-multi-slot {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  min-height: auto;
+  padding: 18px 20px;
+}
+
+.slot-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  padding-bottom: 10px;
+}
+
+.slot-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slot-header-left h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.slot-subheading {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  display: block;
+  margin-top: 2px;
+}
+
+.slot-pets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.pet-meal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.pet-meal-row.row-fed {
+  background: color-mix(in srgb, var(--green-light) 40%, var(--paper));
+  border-color: color-mix(in srgb, var(--green) 30%, var(--line));
+}
+
+.pet-meal-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pet-avatar-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--line) 50%, transparent);
+  font-size: 13px;
+  flex: none;
+}
+
+.pet-meal-info strong {
+  font-size: 13px;
+  display: block;
+}
+
+.pet-meal-info p {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.pet-meal-info .not-fed-copy {
+  color: var(--orange);
+  font-size: 11.5px;
+  font-weight: 600;
+  margin: 2px 0 0;
+}
+
+.pet-meal-action {
+  flex: none;
+}
+
+/* === Pet Manager Card === */
+.pet-manager-card {
+  margin-top: 20px;
+  padding: 18px 20px;
+  background: color-mix(in srgb, var(--soft) 60%, var(--paper));
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+}
+
+.pet-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pet-manager-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pet-manager-title h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pet-manager-title p {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.pet-manager-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--green-light);
+  color: var(--green-ink);
+  flex: none;
+}
+
+.pet-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pet-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.pet-tag-paw {
+  font-size: 12px;
+}
+
+.pet-tag-delete {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.pet-tag-delete:hover {
+  color: var(--red);
+}
+
+.pet-add-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pet-add-form .input-text {
+  flex: 1;
+  min-width: 180px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  font-size: 13px;
+}
+
+.pet-form-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.form-error-inline {
+  color: var(--red);
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.meal-dot.partial {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #ffffff;
+}
+
+.history-pet-badge {
+  color: var(--green-ink);
+  font-weight: 700;
+}
+
 .cat-extra-note {
   display: flex;
   align-items: center;

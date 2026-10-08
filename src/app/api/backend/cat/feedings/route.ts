@@ -14,22 +14,40 @@ export async function POST(request: NextRequest) {
     const input = parsed.data;
 
     // First attempt PostgreSQL RPC
-    const { data, error } = await supabase.rpc('mark_cat_fed', {
+    let { data, error } = await supabase.rpc('mark_cat_fed', {
       p_household_id: input.householdId,
       p_meal_slot_id: input.mealSlotId,
       p_feeding_date: input.feedingDate,
       p_note: input.note ?? undefined,
+      p_pet_id: input.petId ?? undefined,
     });
 
+    // If RPC failed due to older signature without p_pet_id, retry without p_pet_id
+    if (error && (error.message.includes('parameter') || error.message.includes('p_pet_id'))) {
+      const retry = await supabase.rpc('mark_cat_fed', {
+        p_household_id: input.householdId,
+        p_meal_slot_id: input.mealSlotId,
+        p_feeding_date: input.feedingDate,
+        p_note: input.note ?? undefined,
+      });
+      data = retry.data;
+      error = retry.error;
+    }
+
     if (error?.code === '23505' || error?.message?.includes('CAT_ALREADY_FED') || error?.message?.includes('already been recorded')) {
-      const { data: existing } = await supabase
+      let existingQuery = supabase
         .from('cat_feedings')
         .select('*')
         .eq('household_id', input.householdId)
         .eq('meal_slot_id', input.mealSlotId)
         .eq('feeding_date', input.feedingDate)
-        .eq('feeding_type', 'scheduled')
-        .maybeSingle();
+        .eq('feeding_type', 'scheduled');
+
+      if (input.petId) {
+        existingQuery = existingQuery.eq('pet_id', input.petId);
+      }
+
+      const { data: existing } = await existingQuery.maybeSingle();
 
       if (existing) {
         const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', existing.fed_by).maybeSingle();
@@ -54,29 +72,39 @@ export async function POST(request: NextRequest) {
         }
 
         const admin = createAdminClient();
+        const insertPayload: Record<string, unknown> = {
+          household_id: input.householdId,
+          meal_slot_id: input.mealSlotId,
+          feeding_date: input.feedingDate,
+          fed_by: user.id,
+          note: input.note ?? null,
+          feeding_type: 'scheduled',
+        };
+        if (input.petId) {
+          insertPayload.pet_id = input.petId;
+        }
+
         const { data: feedData, error: feedError } = await admin
           .from('cat_feedings')
-          .insert({
-            household_id: input.householdId,
-            meal_slot_id: input.mealSlotId,
-            feeding_date: input.feedingDate,
-            fed_by: user.id,
-            note: input.note ?? null,
-            feeding_type: 'scheduled',
-          })
+          .insert(insertPayload as never)
           .select()
           .single();
 
         if (feedError) {
           if (feedError.code === '23505') {
-            const { data: existing } = await admin
+            let existingQuery = admin
               .from('cat_feedings')
               .select('*')
               .eq('household_id', input.householdId)
               .eq('meal_slot_id', input.mealSlotId)
               .eq('feeding_date', input.feedingDate)
-              .eq('feeding_type', 'scheduled')
-              .maybeSingle();
+              .eq('feeding_type', 'scheduled');
+
+            if (input.petId) {
+              existingQuery = existingQuery.eq('pet_id', input.petId);
+            }
+
+            const { data: existing } = await existingQuery.maybeSingle();
             const { data: profile } = await admin
               .from('profiles')
               .select('display_name')
@@ -97,7 +125,7 @@ export async function POST(request: NextRequest) {
           event_type: 'cat.fed',
           entity_type: 'cat_feeding',
           entity_id: feedData.id,
-          metadata: { meal_slot_id: input.mealSlotId, feeding_date: input.feedingDate },
+          metadata: { meal_slot_id: input.mealSlotId, feeding_date: input.feedingDate, pet_id: input.petId ?? null },
         });
 
         return NextResponse.json({ data: feedData }, { status: 201 });

@@ -51,7 +51,7 @@ export default async function HomePage() {
   const monthStart = monthStartInTimezone(now, household.timezone);
   const today = dateKeyInTimezone(now, household.timezone);
 
-  const [mealSlotsRes, feedingsRes, recentExpensesRes, monthExpensesRes, monthSharesRes] = await Promise.all([
+  const [mealSlotsRes, feedingsRes, recentExpensesRes, monthExpensesRes, monthSharesRes, petsRes] = await Promise.all([
     supabase
       .from('meal_slots')
       .select('*')
@@ -80,6 +80,11 @@ export default async function HomePage() {
       .eq('user_id', user.id)
       .eq('expenses.household_id', household.id)
       .gte('expenses.expense_date', monthStart),
+    supabase
+      .from('pets')
+      .select('*')
+      .eq('household_id', household.id)
+      .order('created_at', { ascending: true }),
   ]);
 
   const slots = mealSlotsRes.data ?? [];
@@ -87,8 +92,14 @@ export default async function HomePage() {
   const recentExpenses = recentExpensesRes.data ?? [];
   const monthExpenses = monthExpensesRes.data ?? [];
   const monthShares = monthSharesRes.data ?? [];
+  const pets = petsRes.data ?? [];
 
-  const feedMap = new Map(feedings.map((feeding) => [feeding.meal_slot_id, feeding]));
+  const getFeeding = (slotId: string, petId?: string) => {
+    if (petId) {
+      return feedings.find((row) => row.meal_slot_id === slotId && row.pet_id === petId);
+    }
+    return feedings.find((row) => row.meal_slot_id === slotId);
+  };
   const currentProfile = profiles.find((p) => p.id === user.id);
   const name = currentProfile?.display_name?.split(' ')[0] || user.email?.split('@')[0] || 'there';
 
@@ -185,7 +196,36 @@ export default async function HomePage() {
             </div>
             <div className="today-meals">
               {slots.map((slot) => {
-                const feeding = feedMap.get(slot.id);
+                if (pets.length > 0) {
+                  const fedPets = pets.filter((pet) => Boolean(getFeeding(slot.id, pet.id)));
+                  const allFed = fedPets.length === pets.length;
+                  const someFed = fedPets.length > 0;
+                  return (
+                    <div className="today-meal" key={slot.id}>
+                      <div className={`meal-dot ${allFed ? 'complete' : someFed ? 'partial' : ''}`}>
+                        {allFed ? <Check size={13} /> : <span />}
+                      </div>
+                      <div className="today-meal-main">
+                        <strong>{slot.name}</strong>
+                        {allFed ? (
+                          <span>All {pets.length} cats fed</span>
+                        ) : someFed ? (
+                          <span>
+                            {fedPets.map((p) => p.name).join(', ')} fed ·{' '}
+                            {pets.filter((p) => !fedPets.includes(p)).map((p) => p.name).join(', ')} waiting
+                          </span>
+                        ) : (
+                          <span>Still waiting ({pets.length} cats)</span>
+                        )}
+                      </div>
+                      <span className={`meal-status ${allFed ? 'fed' : someFed ? 'pending' : 'pending'}`}>
+                        {allFed ? 'ALL FED' : `${fedPets.length}/${pets.length} FED`}
+                      </span>
+                    </div>
+                  );
+                }
+
+                const feeding = getFeeding(slot.id);
                 const fedPersonName = feeding?.fed_by ? (profileMap.get(feeding.fed_by) ?? 'A member') : 'A member';
                 return (
                   <div className="today-meal" key={slot.id}>

@@ -7,6 +7,7 @@ import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { dateKeyInTimezone } from '@/lib/dates';
 import { FeedButton } from '@/components/feed-button';
 import { ExtraFeedingButton } from '@/components/extra-feeding-button';
+import { PetManager } from '@/components/pet-manager';
 import { HouseholdRealtimeListener } from '@/components/household-realtime-listener';
 
 export const metadata: Metadata = { title: 'Cat care' };
@@ -27,7 +28,7 @@ export default async function CatPage() {
 
   const day = dateKeyInTimezone(new Date(), household.timezone);
 
-  const [slotsRes, feedingsRes, historyRes] = await Promise.all([
+  const [slotsRes, feedingsRes, historyRes, petsRes] = await Promise.all([
     supabase
       .from('meal_slots')
       .select('*')
@@ -45,15 +46,30 @@ export default async function CatPage() {
       .eq('household_id', household.id)
       .order('fed_at', { ascending: false })
       .limit(10),
+    supabase
+      .from('pets')
+      .select('*')
+      .eq('household_id', household.id)
+      .order('created_at', { ascending: true }),
   ]);
 
   const slots = slotsRes.data ?? [];
   const feedings = feedingsRes.data ?? [];
   const history = historyRes.data ?? [];
+  const pets = petsRes.data ?? [];
 
-  const feedMap = new Map(feedings.map((row) => [row.meal_slot_id, row]));
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile.display_name]));
   const slotMap = new Map(slots.map((slot) => [slot.id, slot.name]));
+  const petMap = new Map(pets.map((pet) => [pet.id, pet.name]));
+
+  const getFeeding = (slotId: string, petId?: string) => {
+    if (petId) {
+      return feedings.find((row) => row.meal_slot_id === slotId && row.pet_id === petId);
+    }
+    return feedings.find((row) => row.meal_slot_id === slotId);
+  };
+
+  const totalExpectedMeals = pets.length > 0 ? slots.length * pets.length : slots.length;
 
   return (
     <div className="page-wrap cat-page">
@@ -77,12 +93,89 @@ export default async function CatPage() {
               })}
             </h2>
           </div>
-          <span className="day-progress">{feedings.length} of {slots.length} meals done</span>
+          <span className="day-progress">
+            {feedings.length} of {totalExpectedMeals} meals done
+          </span>
         </div>
 
         <div className="cat-slot-list">
           {slots.map((slot, index) => {
-            const feeding = feedMap.get(slot.id);
+            if (pets.length > 0) {
+              const allSlotFed = pets.every((pet) => Boolean(getFeeding(slot.id, pet.id)));
+              const slotFedCount = pets.filter((pet) => Boolean(getFeeding(slot.id, pet.id))).length;
+
+              return (
+                <article
+                  className={`cat-slot-card cat-multi-slot ${allSlotFed ? 'slot-complete' : ''}`}
+                  key={slot.id}
+                >
+                  <div className="slot-header-bar">
+                    <div className="slot-header-left">
+                      <div className={`slot-number ${allSlotFed ? 'done' : ''}`}>
+                        {allSlotFed ? <span>✓</span> : `0${index + 1}`}
+                      </div>
+                      <div>
+                        <h3>{slot.name}</h3>
+                        <small className="slot-subheading">
+                          {slotFedCount} of {pets.length} cats fed
+                        </small>
+                      </div>
+                    </div>
+                    {allSlotFed ? (
+                      <span className="meal-status fed">ALL FED</span>
+                    ) : (
+                      <span className="meal-status pending">PENDING</span>
+                    )}
+                  </div>
+
+                  <div className="slot-pets-list">
+                    {pets.map((pet) => {
+                      const feeding = getFeeding(slot.id, pet.id);
+                      return (
+                        <div
+                          className={`pet-meal-row ${feeding ? 'row-fed' : 'row-pending'}`}
+                          key={`${slot.id}-${pet.id}`}
+                        >
+                          <div className="pet-meal-info">
+                            <span className="pet-avatar-icon">🐾</span>
+                            <div>
+                              <strong>{pet.name}</strong>
+                              {feeding ? (
+                                <p>
+                                  Fed{' '}
+                                  {new Date(feeding.fed_at).toLocaleTimeString([], {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    timeZone: household.timezone,
+                                  })}
+                                  <span> · by {profileMap.get(feeding.fed_by) ?? 'a member'}</span>
+                                </p>
+                              ) : (
+                                <p className="not-fed-copy">Not fed yet</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="pet-meal-action">
+                            <FeedButton
+                              householdId={household.id}
+                              slotId={slot.id}
+                              slotName={slot.name}
+                              feedingDate={day}
+                              petId={pet.id}
+                              petName={pet.name}
+                              alreadyFed={Boolean(feeding)}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </article>
+              );
+            }
+
+            // Single cat / legacy mode when no pets are named yet
+            const feeding = getFeeding(slot.id);
             return (
               <article className={`cat-slot-card ${feeding ? 'slot-complete' : ''}`} key={slot.id}>
                 <div className={`slot-number ${feeding ? 'done' : ''}`}>
@@ -105,21 +198,18 @@ export default async function CatPage() {
                   )}
                 </div>
                 <div className="slot-action">
-                  {feeding ? (
-                    <span className="meal-status fed">✓ FED</span>
-                  ) : (
-                    <FeedButton
-                      householdId={household.id}
-                      slotId={slot.id}
-                      slotName={slot.name}
-                      feedingDate={day}
-                      alreadyFed={false}
-                    />
-                  )}
+                  <FeedButton
+                    householdId={household.id}
+                    slotId={slot.id}
+                    slotName={slot.name}
+                    feedingDate={day}
+                    alreadyFed={Boolean(feeding)}
+                  />
                 </div>
               </article>
             );
           })}
+
           {!slots.length && (
             <div className="empty-state">
               <PawPrint size={24} />
@@ -127,6 +217,9 @@ export default async function CatPage() {
             </div>
           )}
         </div>
+
+        {/* Pet Manager directly below the morning, afternoon, evening meal slots */}
+        <PetManager householdId={household.id} initialPets={pets} />
 
         <div className="cat-extra-note">
           <PawPrint size={16} />
@@ -146,33 +239,39 @@ export default async function CatPage() {
         </div>
         {history.length ? (
           <div className="recent-feedings">
-            {history.map((meal) => (
-              <div className="history-row" key={meal.id}>
-                <span className="history-paw"><PawPrint size={15} /></span>
-                <span className="recent-main">
-                  <strong>
-                    {meal.feeding_type === 'extra'
-                      ? 'Extra feeding'
-                      : slotMap.get(meal.meal_slot_id ?? '') ?? 'Meal'}
-                  </strong>
-                  <span>
-                    {new Date(`${meal.feeding_date}T12:00:00`).toLocaleDateString('en', {
-                      day: 'numeric',
-                      month: 'short',
-                    })}{' '}
-                    <i>·</i> {profileMap.get(meal.fed_by) ?? 'A member'}
+            {history.map((meal) => {
+              const catLabel = meal.pet_id ? petMap.get(meal.pet_id) : null;
+              const slotTitle = meal.feeding_type === 'extra'
+                ? 'Extra feeding'
+                : slotMap.get(meal.meal_slot_id ?? '') ?? 'Meal';
+
+              return (
+                <div className="history-row" key={meal.id}>
+                  <span className="history-paw"><PawPrint size={15} /></span>
+                  <span className="recent-main">
+                    <strong>
+                      {slotTitle}
+                      {catLabel && <span className="history-pet-badge"> · {catLabel}</span>}
+                    </strong>
+                    <span>
+                      {new Date(`${meal.feeding_date}T12:00:00`).toLocaleDateString('en', {
+                        day: 'numeric',
+                        month: 'short',
+                      })}{' '}
+                      <i>·</i> {profileMap.get(meal.fed_by) ?? 'A member'}
+                    </span>
                   </span>
-                </span>
-                <span className="history-time">
-                  <Clock3 size={13} />
-                  {new Date(meal.fed_at).toLocaleTimeString([], {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    timeZone: household.timezone,
-                  })}
-                </span>
-              </div>
-            ))}
+                  <span className="history-time">
+                    <Clock3 size={13} />
+                    {new Date(meal.fed_at).toLocaleTimeString([], {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      timeZone: household.timezone,
+                    })}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="empty-state">

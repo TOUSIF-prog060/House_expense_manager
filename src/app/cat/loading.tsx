@@ -33,6 +33,11 @@ export default function CatLoading() {
             </article>
           ))}
         </div>
+
+        <div className="pet-manager-card skeleton-card" style={{ marginTop: 20 }}>
+          <div className="skeleton-shimmer skeleton-title" style={{ width: 140, height: 18 }} />
+          <div className="skeleton-shimmer skeleton-text" style={{ width: 220, height: 12 }} />
+        </div>
       </section>
 
       <section className="cat-history-section">
