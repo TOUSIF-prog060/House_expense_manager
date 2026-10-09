@@ -14,7 +14,7 @@ payments:Table<{id:string;household_id:string;from_user:string;to_user:string;am
 meal_slots:Table<{id:string;household_id:string;name:string;display_order:number;reminder_enabled:boolean;reminder_time:string|null}>;
 pets:Table<{id:string;household_id:string;name:string;species:string;created_at:string}>;
 cat_feedings:Table<{id:string;household_id:string;meal_slot_id:string|null;feeding_date:string;fed_by:string;fed_at:string;note:string|null;feeding_type:'scheduled'|'extra';pet_id:string|null}>;
-push_subscriptions:Table<{id:string;user_id:string;household_id:string;endpoint:string;p256dh:string;auth:string;is_active:boolean;expense_enabled:boolean;cat_enabled:boolean;reminder_enabled:boolean;payment_enabled:boolean;created_at:string;updated_at:string}>;
+push_subscriptions:Table<{id:string;user_id:string;household_id:string|null;endpoint:string;p256dh:string;auth:string;user_agent?:string|null;device_type?:string|null;last_used_at?:string|null;is_active:boolean;expense_enabled:boolean;cat_enabled:boolean;reminder_enabled:boolean;payment_enabled:boolean;created_at:string;updated_at:string}>;
 notifications:Table<{id:string;user_id:string;household_id:string;type:string;title:string;body:string;entity_id:string|null;entity_type:string|null;read_at:string|null;created_at:string}>;
 activity_events:Table<{id:string;household_id:string;actor:string;event_type:string;entity_type:string;entity_id:string|null;metadata:Json;created_at:string}>;
 };

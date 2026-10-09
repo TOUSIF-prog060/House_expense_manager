@@ -117,6 +117,13 @@ export async function PATCH(request: NextRequest) {
         });
     }
 
+    // Also synchronize this preference to all active device push subscriptions for this user
+    await supabase
+      .from('push_subscriptions')
+      .update(updates)
+      .eq('user_id', user.id)
+      .neq('endpoint', 'preferences');
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
