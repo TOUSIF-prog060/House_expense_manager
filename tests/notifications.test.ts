@@ -31,6 +31,7 @@ vi.mock('web-push', () => ({
 import { POST as subscribeHandler } from '../src/app/api/notifications/subscribe/route';
 import { POST as unsubscribeHandler } from '../src/app/api/notifications/unsubscribe/route';
 import { POST as testHandler } from '../src/app/api/notifications/test/route';
+import { GET as vapidKeyHandler } from '../src/app/api/notifications/vapid-key/route';
 import { urlBase64ToUint8Array } from '../src/lib/notifications/notification-service';
 
 describe('Web Push Notification System', () => {
@@ -159,6 +160,16 @@ describe('Web Push Notification System', () => {
       expect(res.status).toBe(400);
       const data = await res.json();
       expect(data.error).toContain('No active push subscriptions found');
+    });
+  });
+
+  describe('GET /api/notifications/vapid-key', () => {
+    it('returns the VAPID public key successfully', async () => {
+      const res = await vapidKeyHandler();
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toHaveProperty('publicKey');
+      expect(data.publicKey.length).toBeGreaterThan(10);
     });
   });
 

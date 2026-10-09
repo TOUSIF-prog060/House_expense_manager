@@ -68,24 +68,29 @@ export function NotificationPreferences({ householdId }: { householdId: string |
       <section className="settings-card notification-settings" style={{ marginTop: '20px' }}>
         <span className="side-eyebrow">NOTIFICATION CATEGORIES</span>
         <h2>What would you like to hear about?</h2>
-        {!ready && <p>Loading your preferences…</p>}
-        {preferences.map((item) => (
-          <label className="preference-row" key={item.key}>
-            <span>
-              <b>{item.label}</b>
-              <small>{item.description}</small>
-            </span>
-            <input
-              type="checkbox"
-              role="switch"
-              checked={values[item.key]}
-              disabled={!ready || !householdId}
-              onChange={(event) => void update(item.key, event.target.checked)}
-            />
-          </label>
-        ))}
+        {!ready && <p style={{ fontSize: '13.5px', color: 'var(--muted)', marginTop: '12px' }}>Loading your preferences…</p>}
+        <div className="preference-list">
+          {preferences.map((item) => (
+            <label className="preference-row" key={item.key}>
+              <span className="preference-info">
+                <b>{item.label}</b>
+                <small>{item.description}</small>
+              </span>
+              <span className="preference-switch">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={values[item.key]}
+                  disabled={!ready || !householdId}
+                  onChange={(event) => void update(item.key, event.target.checked)}
+                />
+                <span className="preference-slider" />
+              </span>
+            </label>
+          ))}
+        </div>
         {message && (
-          <p className="settings-message" role="status">
+          <p className="settings-message" role="status" style={{ marginTop: '14px' }}>
             {message}
           </p>
         )}

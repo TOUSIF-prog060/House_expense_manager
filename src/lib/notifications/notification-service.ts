@@ -100,6 +100,25 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
 }
 
 /**
+ * Retrieves the VAPID public key, checking build-time env var, dynamic runtime API, or fallback.
+ */
+export async function getVapidPublicKey(): Promise<string> {
+  if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+    return process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  }
+  try {
+    const res = await fetch('/api/notifications/vapid-key');
+    if (res.ok) {
+      const data = (await res.json()) as { publicKey?: string };
+      if (data.publicKey) return data.publicKey;
+    }
+  } catch (err) {
+    console.warn('[NotificationService] Dynamic VAPID key fetch failed:', err);
+  }
+  return 'BJadHF5Gj_lMrh_6DeqHiXVdnF8ui-wKfpmb_BYgx5ygfWAg5f3mWskvmoCbSYDn25hjyVoEnfcwZoB08L87G7Y';
+}
+
+/**
  * Requests permission and subscribes the browser to push notifications.
  */
 export async function subscribeToPushNotifications(
@@ -115,7 +134,7 @@ export async function subscribeToPushNotifications(
     return { success: false, error: 'Push notifications are not supported in this browser.' };
   }
 
-  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const vapidPublicKey = await getVapidPublicKey();
   if (!vapidPublicKey) {
     return { success: false, error: 'Web Push is not configured on the server (missing public key).' };
   }

@@ -2932,3 +2932,101 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-weight: 600;
   color: var(--green-ink);
 }
+
+/* === Notification Preferences & Toggle Switches === */
+.preference-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+}
+
+.preference-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 14px 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+}
+
+.preference-row:last-child {
+  border-bottom: none !important;
+  padding-bottom: 4px !important;
+}
+
+.preference-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.preference-info b {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+}
+
+.preference-info small {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+  display: block;
+}
+
+.preference-switch {
+  width: 44px;
+  height: 26px;
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.preference-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.preference-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--line);
+  transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 26px;
+}
+
+.preference-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.preference-switch input:checked + .preference-slider {
+  background-color: var(--green);
+}
+
+.preference-switch input:checked + .preference-slider:before {
+  transform: translateX(18px);
+}
+
+.preference-switch input:disabled + .preference-slider {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
