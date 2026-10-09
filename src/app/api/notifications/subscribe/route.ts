@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import type { Database } from '@/lib/supabase/database.types';
 
 const subscribeSchema = z.object({
   endpoint: z.string().url('Invalid push endpoint URL'),
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       .eq('endpoint', 'preferences')
       .maybeSingle();
 
-    const baseRow: Record<string, unknown> = {
+    const baseRow: Database['public']['Tables']['push_subscriptions']['Insert'] = {
       user_id: user.id,
       household_id: resolvedHouseholdId,
       endpoint,
@@ -74,10 +75,11 @@ export async function POST(request: NextRequest) {
       cat_enabled: userPref ? Boolean(userPref.cat_enabled) : true,
       reminder_enabled: userPref ? Boolean(userPref.reminder_enabled) : true,
       payment_enabled: userPref ? Boolean(userPref.payment_enabled) : true,
+      created_at: now,
       updated_at: now,
     };
 
-    const extendedRow: Record<string, unknown> = {
+    const extendedRow: Database['public']['Tables']['push_subscriptions']['Insert'] = {
       ...baseRow,
       user_agent: userAgent || null,
       device_type: deviceType || null,
@@ -94,13 +96,13 @@ export async function POST(request: NextRequest) {
       // Attempt update with extended columns; fallback to base columns if columns don't exist yet
       let updateRes = await admin
         .from('push_subscriptions')
-        .update(extendedRow as any)
+        .update(extendedRow)
         .eq('id', existing.id);
 
       if (updateRes.error && (updateRes.error.code === 'PGRST204' || updateRes.error.message.includes('column'))) {
         updateRes = await admin
           .from('push_subscriptions')
-          .update(baseRow as any)
+          .update(baseRow)
           .eq('id', existing.id);
       }
 
@@ -114,14 +116,14 @@ export async function POST(request: NextRequest) {
       // Attempt insert with extended columns; fallback to base columns if columns don't exist yet
       let insertRes = await admin
         .from('push_subscriptions')
-        .insert({ ...extendedRow, created_at: now } as any)
+        .insert(extendedRow)
         .select('id')
         .single();
 
       if (insertRes.error && (insertRes.error.code === 'PGRST204' || insertRes.error.message.includes('column'))) {
         insertRes = await admin
           .from('push_subscriptions')
-          .insert({ ...baseRow, created_at: now } as any)
+          .insert(baseRow)
           .select('id')
           .single();
       }
