@@ -43,12 +43,18 @@ export function PushDeviceManager({ householdId }: PushDeviceManagerProps) {
       setPermission(currentPerm);
 
       const sub = await getCurrentSubscription();
-      setIsSubscribed(Boolean(sub));
+      if (sub && currentPerm === 'granted') {
+        // Automatically ensure existing browser subscription is registered in backend
+        const syncResult = await subscribeToPushNotifications(householdId);
+        setIsSubscribed(syncResult.success);
+      } else {
+        setIsSubscribed(false);
+      }
       setLoading(false);
     }
 
     void checkState();
-  }, []);
+  }, [householdId]);
 
   async function handleEnable() {
     setLoading(true);
@@ -61,13 +67,12 @@ export function PushDeviceManager({ householdId }: PushDeviceManagerProps) {
       setMessageType('success');
       setMessage('Push notifications are now enabled on this device.');
     } else {
+      setIsSubscribed(false);
       setMessageType('error');
       setMessage(result.error || 'Could not enable notifications.');
       setPermission(getNotificationPermission());
     }
 
-    const sub = await getCurrentSubscription();
-    setIsSubscribed(Boolean(sub));
     setLoading(false);
   }
 

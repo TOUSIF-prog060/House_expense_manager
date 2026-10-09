@@ -74,11 +74,15 @@ export async function sendPushNotification(
       });
 
       result.sent += 1;
-      // Update last_used_at timestamp on successful delivery
-      await admin
-        .from('push_subscriptions')
-        .update({ last_used_at: new Date().toISOString() })
-        .eq('id', sub.id);
+      // Optionally update last_used_at timestamp if column exists
+      try {
+        await admin
+          .from('push_subscriptions')
+          .update({ last_used_at: new Date().toISOString() })
+          .eq('id', sub.id);
+      } catch {
+        // Ignored if optional last_used_at column is not present
+      }
     } catch (err: unknown) {
       const wpErr = err as WebPushError;
       const statusCode = wpErr.statusCode;

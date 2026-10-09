@@ -37,9 +37,52 @@ export async function POST(request: NextRequest) {
 
     const { endpoint, keys, householdId, userAgent, deviceType } = parsed.data;
 
-    // Use admin client to reliably upsert subscription across device updates
     const admin = createAdminClient();
     const now = new Date().toISOString();
+
+    // 1. Resolve active household_id if not provided, ensuring compatibility with not-null constraints
+    let resolvedHouseholdId = householdId || null;
+    if (!resolvedHouseholdId) {
+      const { data: membership } = await admin
+        .from('household_members')
+        .select('household_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (membership?.household_id) {
+        resolvedHouseholdId = membership.household_id;
+      }
+    }
+
+    // 2. Fetch existing category preferences to inherit
+    const { data: userPref } = await admin
+      .from('push_subscriptions')
+      .select('expense_enabled, cat_enabled, reminder_enabled, payment_enabled')
+      .eq('user_id', user.id)
+      .eq('endpoint', 'preferences')
+      .maybeSingle();
+
+    const baseRow: Record<string, unknown> = {
+      user_id: user.id,
+      household_id: resolvedHouseholdId,
+      endpoint,
+      p256dh: keys.p256dh,
+      auth: keys.auth,
+      is_active: true,
+      expense_enabled: userPref ? Boolean(userPref.expense_enabled) : true,
+      cat_enabled: userPref ? Boolean(userPref.cat_enabled) : true,
+      reminder_enabled: userPref ? Boolean(userPref.reminder_enabled) : true,
+      payment_enabled: userPref ? Boolean(userPref.payment_enabled) : true,
+      updated_at: now,
+    };
+
+    const extendedRow: Record<string, unknown> = {
+      ...baseRow,
+      user_agent: userAgent || null,
+      device_type: deviceType || null,
+      last_used_at: now,
+    };
 
     const { data: existing } = await admin
       .from('push_subscriptions')
@@ -48,64 +91,47 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existing) {
-      const { error: updateError } = await admin
+      // Attempt update with extended columns; fallback to base columns if columns don't exist yet
+      let updateRes = await admin
         .from('push_subscriptions')
-        .update({
-          user_id: user.id,
-          household_id: householdId || null,
-          p256dh: keys.p256dh,
-          auth: keys.auth,
-          is_active: true,
-          user_agent: userAgent || null,
-          device_type: deviceType || null,
-          updated_at: now,
-          last_used_at: now,
-        })
+        .update(extendedRow as any)
         .eq('id', existing.id);
 
-      if (updateError) {
-        console.error('[API/subscribe] Error updating subscription:', updateError.message);
-        return NextResponse.json({ error: 'Could not update subscription' }, { status: 500 });
+      if (updateRes.error && (updateRes.error.code === 'PGRST204' || updateRes.error.message.includes('column'))) {
+        updateRes = await admin
+          .from('push_subscriptions')
+          .update(baseRow as any)
+          .eq('id', existing.id);
+      }
+
+      if (updateRes.error) {
+        console.error('[API/subscribe] Error updating subscription:', updateRes.error.message);
+        return NextResponse.json({ error: updateRes.error.message }, { status: 500 });
       }
 
       return NextResponse.json({ ok: true, id: existing.id, updated: true }, { status: 200 });
     } else {
-      // Inherit existing notification preferences if set
-      const { data: userPref } = await admin
+      // Attempt insert with extended columns; fallback to base columns if columns don't exist yet
+      let insertRes = await admin
         .from('push_subscriptions')
-        .select('expense_enabled, cat_enabled, reminder_enabled, payment_enabled')
-        .eq('user_id', user.id)
-        .eq('endpoint', 'preferences')
-        .maybeSingle();
-
-      const { data: inserted, error: insertError } = await admin
-        .from('push_subscriptions')
-        .insert({
-          user_id: user.id,
-          household_id: householdId || null,
-          endpoint,
-          p256dh: keys.p256dh,
-          auth: keys.auth,
-          is_active: true,
-          expense_enabled: userPref ? Boolean(userPref.expense_enabled) : true,
-          cat_enabled: userPref ? Boolean(userPref.cat_enabled) : true,
-          reminder_enabled: userPref ? Boolean(userPref.reminder_enabled) : true,
-          payment_enabled: userPref ? Boolean(userPref.payment_enabled) : true,
-          user_agent: userAgent || null,
-          device_type: deviceType || null,
-          created_at: now,
-          updated_at: now,
-          last_used_at: now,
-        })
+        .insert({ ...extendedRow, created_at: now } as any)
         .select('id')
         .single();
 
-      if (insertError) {
-        console.error('[API/subscribe] Error inserting subscription:', insertError.message);
-        return NextResponse.json({ error: 'Could not save subscription' }, { status: 500 });
+      if (insertRes.error && (insertRes.error.code === 'PGRST204' || insertRes.error.message.includes('column'))) {
+        insertRes = await admin
+          .from('push_subscriptions')
+          .insert({ ...baseRow, created_at: now } as any)
+          .select('id')
+          .single();
       }
 
-      return NextResponse.json({ ok: true, id: inserted.id, created: true }, { status: 201 });
+      if (insertRes.error) {
+        console.error('[API/subscribe] Error inserting subscription:', insertRes.error.message);
+        return NextResponse.json({ error: insertRes.error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ ok: true, id: insertRes.data?.id, created: true }, { status: 201 });
     }
   } catch (error) {
     console.error('[API/subscribe] Unexpected error:', error);
