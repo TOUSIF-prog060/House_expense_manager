@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { paymentSchema } from '@/lib/validation/schemas';
+import { sendPushNotification } from '@/lib/notifications/push-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +26,32 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) throw error;
+
+    void (async () => {
+      try {
+        const admin = createAdminClient();
+        const { data: profile } = await admin.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+        const payerName = profile?.display_name || 'A housemate';
+
+        await sendPushNotification(
+          input.toUser,
+          {
+            title: 'Payment Recorded 💸',
+            body: `${payerName} recorded a payment of ₹${Number(input.amount).toFixed(0)} to you.`,
+            url: '/settlement',
+            tag: 'payment-recorded',
+            data: {
+              type: 'payment_recorded',
+              paymentId,
+            },
+          },
+          'payment'
+        );
+      } catch (err) {
+        console.error('[Push/Payment] Dispatch error:', err);
+      }
+    })();
+
     return NextResponse.json({ data: { id: paymentId } }, { status: 201 });
   } catch (error) {
     return NextResponse.json(

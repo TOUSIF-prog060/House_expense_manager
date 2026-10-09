@@ -3,6 +3,7 @@ import { calculateShares } from '@/lib/calculations/money';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { expenseSchema } from '@/lib/validation/schemas';
+import { sendHouseholdPushNotification } from '@/lib/notifications/push-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -90,6 +91,8 @@ export async function POST(request: NextRequest) {
           metadata: { title: input.title.trim(), amount: input.amount },
         });
 
+        void notifyExpenseAdded(input.householdId, user.id, input.title, Number(input.amount), newExpense.id);
+
         return NextResponse.json({ data: { id: newExpense.id } }, { status: 201 });
       }
 
@@ -97,9 +100,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    void notifyExpenseAdded(input.householdId, user.id, input.title, Number(input.amount), id);
+
     return NextResponse.json({ data: { id } }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : (typeof error === 'object' && error && 'message' in error ? String((error as { message?: unknown }).message) : 'Could not save the expense.');
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function notifyExpenseAdded(householdId: string, actorId: string, title: string, amount: number, expenseId?: string) {
+  try {
+    const admin = createAdminClient();
+    const { data: profile } = await admin.from('profiles').select('display_name').eq('id', actorId).maybeSingle();
+    const userName = profile?.display_name || 'A housemate';
+
+    await sendHouseholdPushNotification(
+      householdId,
+      {
+        title: 'New Expense Added 🧾',
+        body: `${userName} added "${title}" (₹${amount.toFixed(0)}).`,
+        url: expenseId ? `/expenses/${expenseId}` : '/expenses',
+        tag: 'expense-created',
+        data: {
+          type: 'expense_created',
+          expenseId,
+        },
+      },
+      'expense',
+      actorId
+    );
+  } catch (err) {
+    console.error('[Push/Expense] Dispatch error:', err);
   }
 }

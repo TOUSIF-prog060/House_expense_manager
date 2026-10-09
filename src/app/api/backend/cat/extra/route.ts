@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendHouseholdPushNotification } from '@/lib/notifications/push-service';
 
 const schema = z.object({ householdId: z.string().uuid(), note: z.string().max(500).optional() });
 
@@ -67,6 +68,8 @@ export async function POST(request: NextRequest) {
           entity_id: feedData.id,
         });
 
+        void notifyExtraFed(parsed.data.householdId, user.id, parsed.data.note);
+
         return NextResponse.json({ data: feedData }, { status: 201 });
       }
 
@@ -74,9 +77,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    void notifyExtraFed(parsed.data.householdId, user.id, parsed.data.note);
+
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : (typeof error === 'object' && error && 'message' in error ? String((error as { message?: unknown }).message) : 'Could not record the extra feeding.');
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function notifyExtraFed(householdId: string, actorId: string, note?: string | null) {
+  try {
+    const admin = createAdminClient();
+    const { data: profile } = await admin.from('profiles').select('display_name').eq('id', actorId).maybeSingle();
+    const userName = profile?.display_name || 'A housemate';
+    const noteText = note ? ` ("${note}")` : '';
+
+    await sendHouseholdPushNotification(
+      householdId,
+      {
+        title: 'Extra Cat Care 🐱',
+        body: `${userName} recorded an extra feeding/treat${noteText}.`,
+        url: '/cat',
+        tag: 'cat-feeding-extra',
+        data: {
+          type: 'cat_extra_feeding',
+        },
+      },
+      'cat',
+      actorId
+    );
+  } catch (err) {
+    console.error('[Push/CatExtra] Dispatch error:', err);
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { feedingSchema } from '@/lib/validation/schemas';
+import { sendHouseholdPushNotification } from '@/lib/notifications/push-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -128,6 +129,8 @@ export async function POST(request: NextRequest) {
           metadata: { meal_slot_id: input.mealSlotId, feeding_date: input.feedingDate, pet_id: input.petId ?? null },
         });
 
+        void notifyCatFed(input.householdId, user.id, input.mealSlotId, input.petId);
+
         return NextResponse.json({ data: feedData }, { status: 201 });
       }
 
@@ -135,9 +138,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    void notifyCatFed(input.householdId, user.id, input.mealSlotId, input.petId);
+
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : (typeof error === 'object' && error && 'message' in error ? String((error as { message?: unknown }).message) : 'Could not record the feeding.');
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function notifyCatFed(householdId: string, actorId: string, mealSlotId?: string | null, petId?: string | null) {
+  try {
+    const admin = createAdminClient();
+    const [{ data: profile }, { data: slot }, { data: pet }] = await Promise.all([
+      admin.from('profiles').select('display_name').eq('id', actorId).maybeSingle(),
+      mealSlotId ? admin.from('meal_slots').select('name').eq('id', mealSlotId).maybeSingle() : Promise.resolve({ data: null }),
+      petId ? admin.from('pets').select('name').eq('id', petId).maybeSingle() : Promise.resolve({ data: null }),
+    ]);
+
+    const userName = profile?.display_name || 'A housemate';
+    const slotName = slot?.name || 'Meal';
+    const petTarget = pet?.name ? ` for ${pet.name}` : '';
+
+    await sendHouseholdPushNotification(
+      householdId,
+      {
+        title: 'Cat Fed 🐱',
+        body: `${userName} recorded ${slotName}${petTarget}.`,
+        url: '/cat',
+        tag: 'cat-feeding',
+        data: {
+          type: 'cat_feeding',
+          mealSlotId: mealSlotId || undefined,
+          petId: petId || undefined,
+        },
+      },
+      'cat',
+      actorId
+    );
+  } catch (err) {
+    console.error('[Push/CatFeedings] Dispatch error:', err);
   }
 }
