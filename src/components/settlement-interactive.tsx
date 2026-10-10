@@ -1,13 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, CheckCircle2, ChevronDown, ChevronUp, History, Scale, Wallet } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ExternalLink,
+  History,
+  Scale,
+  Smartphone,
+  Wallet,
+} from 'lucide-react';
 import { formatRupees, type Transfer } from '@/lib/calculations/money';
 import { PaymentForm, type PaymentPrefill } from '@/components/payment-form';
 
 type Member = {
   userId: string;
   name: string;
+  upiId?: string | null;
 };
 
 type RecentPayment = {
@@ -37,6 +50,7 @@ export function SettlementInteractive({
 }) {
   const [prefill, setPrefill] = useState<PaymentPrefill | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   function handleSelectTransfer(transfer: Transfer) {
     setPrefill({
@@ -52,6 +66,14 @@ export function SettlementInteractive({
       el.scrollIntoView({ behavior: 'smooth' });
     }
   }
+
+  function handleCopyUpi(upiId: string, key: string) {
+    navigator.clipboard.writeText(upiId);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2500);
+  }
+
+  const memberMap = new Map(members.map((m) => [m.userId, m]));
 
   return (
     <div className="settlement-layout">
@@ -73,11 +95,25 @@ export function SettlementInteractive({
               {transfers.map((transfer, index) => {
                 const isUserPayer = transfer.fromUserId === currentUserId;
                 const isUserReceiver = transfer.toUserId === currentUserId;
+                const receiverMember = memberMap.get(transfer.toUserId);
+                const receiverUpi = receiverMember?.upiId?.trim();
+                const copyKey = `${transfer.fromUserId}-${transfer.toUserId}-${index}`;
+
+                // UPI URI scheme pre-fills recipient, name, and exact amount
+                const upiPayUrl = receiverUpi
+                  ? `upi://pay?pa=${encodeURIComponent(receiverUpi)}&pn=${encodeURIComponent(
+                      transfer.toName
+                    )}&am=${(transfer.amountPaise / 100).toFixed(2)}&cu=INR&tn=${encodeURIComponent(
+                      'Household settlement'
+                    )}`
+                  : null;
 
                 return (
                   <div
-                    className={`transfer-row-card ${isUserPayer ? 'user-owes-card' : ''} ${isUserReceiver ? 'user-receives-card' : ''}`}
-                    key={`${transfer.fromUserId}-${transfer.toUserId}-${index}`}
+                    className={`transfer-row-card ${isUserPayer ? 'user-owes-card' : ''} ${
+                      isUserReceiver ? 'user-receives-card' : ''
+                    }`}
+                    key={copyKey}
                   >
                     <div className="transfer-flow">
                       <div className="party-chip payer-chip">
@@ -107,13 +143,54 @@ export function SettlementInteractive({
                       </div>
                     </div>
 
-                    <div className="transfer-action">
+                    {/* Receiver UPI Info & Direct Payment */}
+                    <div className="transfer-upi-details">
+                      {receiverUpi ? (
+                        <div className="transfer-upi-row">
+                          <span className="transfer-upi-badge">
+                            <Smartphone size={13} /> UPI: <b>{receiverUpi}</b>
+                          </span>
+
+                          <button
+                            type="button"
+                            className="text-button-subtle copy-upi-link"
+                            onClick={() => handleCopyUpi(receiverUpi, copyKey)}
+                          >
+                            {copiedKey === copyKey ? (
+                              <>
+                                <Check size={12} /> Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={12} /> Copy UPI
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="transfer-upi-missing">
+                          No UPI ID added yet by {transfer.toName}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="transfer-action-group">
+                      {receiverUpi && isUserPayer && upiPayUrl && (
+                        <a
+                          href={upiPayUrl}
+                          className="button button-sm button-primary upi-direct-pay-btn"
+                          title="Open UPI app (GPay / PhonePe / Paytm) to pay"
+                        >
+                          <Smartphone size={13} /> Pay via UPI App
+                        </a>
+                      )}
+
                       <button
                         type="button"
                         className="button button-sm button-secondary settle-action-btn"
                         onClick={() => handleSelectTransfer(transfer)}
                       >
-                        Record this transfer
+                        Record as paid
                       </button>
                     </div>
                   </div>
@@ -186,13 +263,13 @@ export function SettlementInteractive({
             <strong>How settlements work</strong>
           </div>
           <p>
-            1. Total household expenses are calculated and divided equally among all members.
+            1. Total household expenses are divided equally among all housemates.
           </p>
           <p>
-            2. Transfers show who needs to pay whom so everyone contributes their exact share.
+            2. Transfer directly via UPI using the <strong>Pay via UPI App</strong> button or copy the receiver&apos;s UPI ID.
           </p>
           <p>
-            3. Transfer money using your preferred app (like UPI or cash), then record it here to keep balances in sync.
+            3. Once sent, click <strong>Record as paid</strong> to update household balances.
           </p>
         </div>
       </aside>

@@ -41,7 +41,7 @@ export const getHouseholdForUser = cache(async (userId: string) => {
   const { data: profiles } = memberUserIds.length > 0
     ? await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url')
+        .select('id, display_name, avatar_url, upi_id')
         .in('id', memberUserIds)
     : { data: [] };
 

@@ -10,6 +10,7 @@ import {
   Layers,
   Receipt,
   Scale,
+  Smartphone,
   Sparkles,
   Tags,
   TrendingDown,
@@ -22,6 +23,7 @@ import { formatRupees, simplifySettlements, type Balance, type Transfer } from '
 import { monthStartInTimezone } from '@/lib/dates';
 import { HouseholdRealtimeListener } from '@/components/household-realtime-listener';
 import { SettlementInteractive } from '@/components/settlement-interactive';
+import { SettlementUpiManager } from '@/components/settlement-upi-manager';
 
 export const metadata: Metadata = { title: 'Settlement' };
 
@@ -129,6 +131,9 @@ export default async function SettlementPage({
   });
 
   const profileMap = new Map(profiles.map((p) => [p.id, p.display_name]));
+  const upiMap = new Map(
+    profiles.map((p) => [p.id, (p as { upi_id?: string | null }).upi_id ?? null])
+  );
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
 
   // 3. Category Split Breakdown
@@ -144,7 +149,8 @@ export default async function SettlementPage({
   const categoryGroupMap = new Map<string, CategoryGroup>();
 
   for (const exp of expenses) {
-    const rawCat = (exp.category_id ? categoryMap.get(exp.category_id) : null) ||
+    const rawCat =
+      (exp.category_id ? categoryMap.get(exp.category_id) : null) ||
       (exp.expense_categories as { id?: string; name?: string; icon?: string; is_pet?: boolean } | null);
 
     const catId = rawCat?.id ?? exp.category_id ?? 'uncategorized';
@@ -212,6 +218,7 @@ export default async function SettlementPage({
   // 4. Member balances calculation
   const memberBreakdown = sortedMembers.map((member) => {
     const name = profileMap.get(member.user_id) || 'Housemate';
+    const upiId = upiMap.get(member.user_id) ?? null;
 
     const paidPaise = expenses
       .filter((e) => e.paid_by === member.user_id)
@@ -241,6 +248,7 @@ export default async function SettlementPage({
     return {
       userId: member.user_id,
       name,
+      upiId,
       paidPaise,
       fairSharePaise,
       paymentsSentPaise,
@@ -574,13 +582,22 @@ export default async function SettlementPage({
                       <strong>
                         {item.name} {item.isCurrentUser && <span className="you-pill">You</span>}
                       </strong>
-                      {item.netPaymentsPaise !== 0 && (
-                        <small className="member-adjustment-hint">
-                          {item.netPaymentsPaise > 0
-                            ? `+₹${(item.netPaymentsPaise / 100).toFixed(0)} sent in payments`
-                            : `-₹${(Math.abs(item.netPaymentsPaise) / 100).toFixed(0)} received in payments`}
-                        </small>
-                      )}
+                      <div className="member-sub-info">
+                        {item.upiId ? (
+                          <span className="member-upi-badge">
+                            <Smartphone size={11} /> {item.upiId}
+                          </span>
+                        ) : (
+                          <span className="member-upi-none">No UPI added</span>
+                        )}
+                        {item.netPaymentsPaise !== 0 && (
+                          <small className="member-adjustment-hint">
+                            {item.netPaymentsPaise > 0
+                              ? `+₹${(item.netPaymentsPaise / 100).toFixed(0)} sent`
+                              : `-₹${(Math.abs(item.netPaymentsPaise) / 100).toFixed(0)} received`}
+                          </small>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -619,11 +636,26 @@ export default async function SettlementPage({
         </div>
       </section>
 
+      {/* Household UPI Directory & Management */}
+      <SettlementUpiManager
+        members={memberBreakdown.map((m) => ({
+          userId: m.userId,
+          name: m.name,
+          upiId: m.upiId,
+          isCurrentUser: m.isCurrentUser,
+        }))}
+        currentUserId={user.id}
+      />
+
       {/* Interactive Settlement Transfers & Payment Recording */}
       <SettlementInteractive
         householdId={household.id}
         currentUserId={user.id}
-        members={memberBreakdown.map((m) => ({ userId: m.userId, name: m.name }))}
+        members={memberBreakdown.map((m) => ({
+          userId: m.userId,
+          name: m.name,
+          upiId: m.upiId,
+        }))}
         transfers={transfers}
         recentPayments={recentPayments}
       />

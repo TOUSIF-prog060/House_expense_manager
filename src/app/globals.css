@@ -2541,6 +2541,240 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   border: 1px solid var(--line);
 }
 
+.member-sub-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.member-upi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  font-family: monospace;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.member-upi-none {
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+/* --- Household UPI Directory & Manager --- */
+.upi-manager-card {
+  margin-bottom: 24px;
+}
+
+.upi-icon-wrap {
+  background: var(--soft);
+  color: var(--ink);
+}
+
+.my-upi-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin: 16px 0 14px;
+  flex-wrap: wrap;
+}
+
+.my-upi-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.my-upi-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+
+.my-upi-val-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.my-upi-value {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.upi-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green-ink);
+  background: var(--green-light);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.no-upi-prompt {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.upi-edit-form {
+  margin: 8px 0 16px;
+  padding: 14px 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.upi-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.upi-text-input {
+  flex: 1;
+  min-width: 240px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 13.5px;
+  background: var(--soft);
+  color: var(--ink);
+  font-family: inherit;
+}
+
+.upi-helper-note {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.housemates-upi-list h3 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 18px 0 10px;
+}
+
+.upi-directory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.upi-member-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: border-color 0.15s ease;
+}
+
+.upi-member-card:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.upi-member-current {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.02);
+}
+
+.upi-member-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.upi-member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.upi-member-name-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.upi-member-name-box strong {
+  font-size: 13px;
+}
+
+.upi-id-text {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.upi-missing-text {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.upi-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.copy-upi-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.pay-upi-direct-btn {
+  font-size: 11px;
+  padding: 4px 10px;
+  text-decoration: none;
+  font-weight: 700;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  color: #ffffff !important;
+  border-radius: 6px;
+}
+
 /* --- Settlement Layout (Transfers & Payment Form) --- */
 .settlement-layout {
   display: grid;
@@ -2671,6 +2905,69 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-size: 12px;
   padding: 6px 12px;
   white-space: nowrap;
+}
+
+/* Transfer UPI details & actions */
+.transfer-upi-details {
+  margin: 4px 0;
+  width: 100%;
+}
+
+.transfer-upi-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.transfer-upi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.transfer-upi-badge b {
+  color: var(--ink);
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.copy-upi-link {
+  font-size: 11px;
+}
+
+.transfer-upi-missing {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.transfer-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.upi-direct-pay-btn {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  color: #ffffff !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+}
+
+.upi-direct-pay-btn:hover {
+  opacity: 0.95;
 }
 
 /* Settled empty state */
