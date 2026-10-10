@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Copy, Edit2, Plus, QrCode, ShieldCheck, Smartphone, User, X } from 'lucide-react';
+import { Check, Copy, Edit2, Plus, ShieldCheck, Smartphone, X } from 'lucide-react';
 
 export type UpiMember = {
   userId: string;
@@ -20,16 +20,49 @@ export function SettlementUpiManager({
 }) {
   const router = useRouter();
   const currentUser = members.find((m) => m.userId === currentUserId);
-  const currentUpi = currentUser?.upiId ?? '';
+  const initialUpi = currentUser?.upiId ?? '';
 
+  const [activeUpi, setActiveUpi] = useState(initialUpi);
   const [isEditing, setIsEditing] = useState(false);
-  const [upiInput, setUpiInput] = useState(currentUpi);
+  const [upiInput, setUpiInput] = useState(initialUpi);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   async function handleSaveUpi(e: React.FormEvent) {
     e.preventDefault();
+    setBusy(true);
+    setError('');
+    setSuccess(false);
+
+    const cleanInput = upiInput.trim();
+
+    try {
+      const res = await fetch('/api/backend/profile/upi', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ upiId: cleanInput }),
+      });
+      const data = (await res.json()) as { error?: string; data?: { upiId: string | null } };
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save UPI ID');
+      }
+
+      setActiveUpi(cleanInput);
+      setSuccess(true);
+      setIsEditing(false);
+      setTimeout(() => setSuccess(false), 3500);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save UPI ID');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleClearUpi() {
     setBusy(true);
     setError('');
 
@@ -37,17 +70,22 @@ export function SettlementUpiManager({
       const res = await fetch('/api/backend/profile/upi', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ upiId: upiInput.trim() }),
+        credentials: 'same-origin',
+        body: JSON.stringify({ upiId: '' }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to save UPI ID');
+        throw new Error(data.error || 'Failed to clear UPI ID');
       }
 
+      setActiveUpi('');
+      setUpiInput('');
+      setSuccess(true);
       setIsEditing(false);
+      setTimeout(() => setSuccess(false), 3500);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save UPI ID');
+      setError(err instanceof Error ? err.message : 'Failed to clear UPI ID');
     } finally {
       setBusy(false);
     }
@@ -71,13 +109,19 @@ export function SettlementUpiManager({
         </div>
       </div>
 
+      {success && (
+        <div className="form-success" role="status">
+          <Check size={15} /> UPI ID updated successfully!
+        </div>
+      )}
+
       {/* Your Personal UPI Card */}
       <div className="my-upi-box">
         <div className="my-upi-info">
           <span className="my-upi-label">Your UPI ID (For receiving payments)</span>
-          {currentUpi ? (
+          {activeUpi ? (
             <div className="my-upi-val-row">
-              <strong className="my-upi-value">{currentUpi}</strong>
+              <strong className="my-upi-value">{activeUpi}</strong>
               <span className="upi-active-badge">
                 <ShieldCheck size={13} /> Active
               </span>
@@ -94,11 +138,12 @@ export function SettlementUpiManager({
             type="button"
             className="button button-sm button-secondary"
             onClick={() => {
-              setUpiInput(currentUpi);
+              setUpiInput(activeUpi);
+              setError('');
               setIsEditing(true);
             }}
           >
-            {currentUpi ? (
+            {activeUpi ? (
               <>
                 <Edit2 size={13} /> Edit UPI
               </>
@@ -112,7 +157,10 @@ export function SettlementUpiManager({
           <button
             type="button"
             className="text-button-subtle"
-            onClick={() => setIsEditing(false)}
+            onClick={() => {
+              setIsEditing(false);
+              setError('');
+            }}
             title="Cancel"
           >
             <X size={15} /> Cancel
@@ -137,35 +185,19 @@ export function SettlementUpiManager({
             <button className="button button-sm button-primary" disabled={busy}>
               {busy ? 'Saving…' : 'Save UPI'}
             </button>
-            {currentUpi && (
+            {activeUpi && (
               <button
                 type="button"
                 className="button button-sm button-secondary"
                 disabled={busy}
-                onClick={async () => {
-                  setUpiInput('');
-                  setBusy(true);
-                  try {
-                    await fetch('/api/backend/profile/upi', {
-                      method: 'POST',
-                      headers: { 'content-type': 'application/json' },
-                      body: JSON.stringify({ upiId: '' }),
-                    });
-                    setIsEditing(false);
-                    router.refresh();
-                  } catch {
-                    setError('Failed to clear UPI');
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
+                onClick={handleClearUpi}
               >
                 Clear
               </button>
             )}
           </div>
           <small className="upi-helper-note">
-            Supported handles: @okhdfcbank, @oksbi, @okaxis, @ybl, @paytm, @icici, etc.
+            Supported handles: @okhdfcbank, @oksbi, @okaxis, @ybl, @paytm, @icici, @ptsbi, etc.
           </small>
         </form>
       )}
@@ -175,7 +207,8 @@ export function SettlementUpiManager({
         <h3>Housemate UPI IDs</h3>
         <div className="upi-directory-grid">
           {members.map((member) => {
-            const hasUpi = Boolean(member.upiId);
+            const memberUpi = member.isCurrentUser ? activeUpi : member.upiId;
+            const hasUpi = Boolean(memberUpi);
             const isCopied = copiedId === member.userId;
 
             return (
@@ -192,19 +225,19 @@ export function SettlementUpiManager({
                       {member.name} {member.isCurrentUser && <span className="you-pill">You</span>}
                     </strong>
                     {hasUpi ? (
-                      <span className="upi-id-text">{member.upiId}</span>
+                      <span className="upi-id-text">{memberUpi}</span>
                     ) : (
                       <span className="upi-missing-text">No UPI ID added</span>
                     )}
                   </div>
                 </div>
 
-                {hasUpi && (
+                {hasUpi && memberUpi && (
                   <div className="upi-card-actions">
                     <button
                       type="button"
                       className="button button-xs button-secondary copy-upi-btn"
-                      onClick={() => handleCopy(member.upiId!, member.userId)}
+                      onClick={() => handleCopy(memberUpi, member.userId)}
                     >
                       {isCopied ? (
                         <>
@@ -219,7 +252,7 @@ export function SettlementUpiManager({
 
                     <a
                       href={`upi://pay?pa=${encodeURIComponent(
-                        member.upiId!
+                        memberUpi
                       )}&pn=${encodeURIComponent(member.name)}&cu=INR`}
                       className="button button-xs button-primary pay-upi-direct-btn"
                       title={`Open UPI app to pay ${member.name}`}

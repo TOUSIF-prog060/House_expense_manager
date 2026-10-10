@@ -10,13 +10,14 @@ export async function POST(request: NextRequest) {
     const auth = await createClient();
     const {
       data: { user },
+      error: authError,
     } = await auth.auth.getUser();
 
-    if (!user) {
+    if (!user || authError) {
       return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
     }
 
-    const body = (await request.json()) as { upiId?: string };
+    const body = (await request.json().catch(() => ({}))) as { upiId?: string };
     const rawUpi = (body.upiId ?? '').trim();
 
     if (rawUpi.length > 0 && !UPI_REGEX.test(rawUpi)) {
@@ -28,47 +29,50 @@ export async function POST(request: NextRequest) {
 
     const cleanUpi = rawUpi.length > 0 ? rawUpi : null;
 
-    // 1. Try calling the RPC function
-    let updateSuccess = false;
+    // 1. Update user metadata for immediate persistence
     try {
-      const { error: rpcError } = await auth.rpc('set_my_upi_id', {
-        p_upi_id: cleanUpi ?? '',
+      await auth.auth.updateUser({
+        data: { upi_id: cleanUpi },
       });
-      if (!rpcError) {
-        updateSuccess = true;
-      }
     } catch {
-      // Fallback to table update
+      // Non-blocking fallback
     }
 
-    // 2. If RPC was not found, fallback to direct profile table update
-    if (!updateSuccess) {
-      const { error: updateError } = await auth
+    // 2. Update profiles table using privileged admin client (reliable & direct)
+    const admin = createAdminClient();
+    const { error: adminError } = await admin
+      .from('profiles')
+      .update({ upi_id: cleanUpi, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+
+    if (adminError) {
+      console.error('[Profile/UPI] Admin update error:', adminError);
+
+      // Fallback: try authenticated client
+      const { error: userError } = await auth
         .from('profiles')
-        .update({ upi_id: cleanUpi })
+        .update({ upi_id: cleanUpi, updated_at: new Date().toISOString() })
         .eq('id', user.id);
 
-      if (updateError) {
-        // Try with admin client in case of RLS column caching
-        try {
-          const admin = createAdminClient();
-          const { error: adminError } = await admin
-            .from('profiles')
-            .update({ upi_id: cleanUpi })
-            .eq('id', user.id);
-
-          if (adminError) throw adminError;
-        } catch (adminErr) {
-          throw updateError || adminErr;
-        }
+      if (userError) {
+        console.error('[Profile/UPI] User update error:', userError);
+        return NextResponse.json(
+          { error: userError.message || adminError.message || 'Could not update profile.' },
+          { status: 500 }
+        );
       }
     }
 
     return NextResponse.json({ data: { upiId: cleanUpi } }, { status: 200 });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Could not save UPI ID.' },
-      { status: 500 }
-    );
+    console.error('[Profile/UPI] Unexpected error:', error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'object' && error && 'message' in error
+        ? String((error as { message: unknown }).message)
+        : 'Could not save UPI ID.';
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
