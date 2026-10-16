@@ -46,6 +46,9 @@ export default async function NewExpensePage({
 
   const initialDate = paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) ? paramDate : undefined;
 
+  const currentMember = members.find((member) => member.user_id === user.id);
+  const isAdmin = currentMember?.role === 'admin';
+
   return (
     <div className="page-wrap form-page">
       <Link className="back-link" href={initialDate ? `/expenses?date=${initialDate}` : '/expenses'}>
@@ -63,6 +66,7 @@ export default async function NewExpensePage({
           categories={categories}
           currentUserId={user.id}
           initialDate={initialDate}
+          isAdmin={isAdmin}
         />
       </section>
     </div>

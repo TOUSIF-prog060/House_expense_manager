@@ -9,21 +9,60 @@ import { expenseSchema } from '@/lib/validation/schemas';
 type Person = { userId: string; name: string };
 type Category = { id: string; name: string; is_pet: boolean };
 const petCategory = (name: string) => name.toLowerCase().startsWith('cat ');
-export function ExpenseForm({ householdId, people, categories, currentUserId, initialDate }: { householdId: string; people: Person[]; categories: Category[]; currentUserId: string; initialDate?: string }) {
+const isGroceryCategory = (name: string) => name.trim().toLowerCase() === 'groceries';
+
+export function ExpenseForm({
+  householdId,
+  people,
+  categories,
+  currentUserId,
+  initialDate,
+  isAdmin = false,
+}: {
+  householdId: string;
+  people: Person[];
+  categories: Category[];
+  currentUserId: string;
+  initialDate?: string;
+  isAdmin?: boolean;
+}) {
   const router = useRouter();
-  const [title, setTitle] = useState(''); const [amount, setAmount] = useState('');
-  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? ''); const [paidBy, setPaidBy] = useState(currentUserId);
-  const [date, setDate] = useState(initialDate || new Date().toLocaleDateString('en-CA')); const [notes, setNotes] = useState('');
-  const [method, setMethod] = useState<SplitMethod>('equal'); const [participantIds, setParticipantIds] = useState<string[]>(people.map((person) => person.userId));
-  const [values, setValues] = useState<Record<string, string>>({}); const [file, setFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const [title, setTitle] = useState('');
+  const [amount, setAmount] = useState('');
+  const initialCat = (isAdmin ? categories[0] : categories.find((c) => !isGroceryCategory(c.name))) ?? categories[0];
+  const [categoryId, setCategoryId] = useState(initialCat?.id ?? '');
+  const [paidBy, setPaidBy] = useState(currentUserId);
+  const [date, setDate] = useState(initialDate || new Date().toLocaleDateString('en-CA'));
+  const [notes, setNotes] = useState('');
+  const [method, setMethod] = useState<SplitMethod>('equal');
+  const [participantIds, setParticipantIds] = useState<string[]>(people.map((person) => person.userId));
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   const selectedCategory = categories.find((category) => category.id === categoryId);
   const isPet = selectedCategory?.is_pet ?? (selectedCategory ? petCategory(selectedCategory.name) : false);
   const participants = useMemo(() => participantIds.map((userId) => ({ userId, value: values[userId] })), [participantIds, values]);
   const calculated = useMemo(() => { try { return amount && participants.length ? calculateShares(amount, participants, method) : null; } catch { return null; } }, [amount, participants, method]);
-  function updateCategory(id: string) { setCategoryId(id); const pet = categories.find((category) => category.id === id); if (pet?.is_pet || (pet && petCategory(pet.name))) setParticipantIds(people.map((person) => person.userId)); }
+
+  function updateCategory(id: string) {
+    const selected = categories.find((category) => category.id === id);
+    if (!isAdmin && selected && isGroceryCategory(selected.name)) {
+      setError('Only household admins can upload grocery expenses.');
+      return;
+    }
+    setCategoryId(id);
+    const pet = selected;
+    if (pet?.is_pet || (pet && petCategory(pet.name))) setParticipantIds(people.map((person) => person.userId));
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError('');
+    const currentCat = categories.find((category) => category.id === categoryId);
+    if (!isAdmin && currentCat && isGroceryCategory(currentCat.name)) {
+      setError('Only household admins can upload grocery expenses.');
+      return;
+    }
     const validation = expenseSchema.safeParse({ householdId, title, amount, category: categoryId, expenseDate: date, paidBy, participants, splitMethod: method, notes });
     if (!validation.success) { setError(validation.error.issues[0]?.message ?? 'Please check the expense details.'); return; }
     try { calculateShares(amount, participants, method); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Check participant shares.'); return; }
@@ -47,9 +86,9 @@ export function ExpenseForm({ householdId, people, categories, currentUserId, in
   }
   return <form className="expense-form" onSubmit={submit}>
     {error && <div className="form-error" role="alert">{error}</div>}
-    <div className="form-grid"><label className="field field-wide"><span>What was it for?</span><input required maxLength={120} placeholder="e.g. Groceries" value={title} onChange={(event) => setTitle(event.target.value)}/></label>
+    <div className="form-grid"><label className="field field-wide"><span>What was it for?</span><input required maxLength={120} placeholder={isAdmin ? "e.g. Groceries" : "e.g. Electricity bill"} value={title} onChange={(event) => setTitle(event.target.value)}/></label>
     <label className="field"><span>Amount</span><div className="amount-input"><span>₹</span><input required inputMode="decimal" pattern="\d+(\.\d{1,2})?" placeholder="0.00" value={amount} onChange={(event) => setAmount(event.target.value)}/></div></label>
-    <label className="field"><span>Category</span><select value={categoryId} onChange={(event) => updateCategory(event.target.value)}>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select></label>
+    <label className="field"><span>Category</span><select value={categoryId} onChange={(event) => updateCategory(event.target.value)}>{categories.map((category) => <option value={category.id} key={category.id} disabled={!isAdmin && isGroceryCategory(category.name)}>{category.name}{!isAdmin && isGroceryCategory(category.name) ? ' (Admin only)' : ''}</option>)}</select>{!isAdmin && <small style={{ color: 'var(--muted, #888)', marginTop: '0.25rem', display: 'block' }}>Groceries upload is restricted to household admins.</small>}</label>
     <label className="field"><span>Paid by</span><select value={paidBy} onChange={(event) => setPaidBy(event.target.value)}>{people.map((person) => <option key={person.userId} value={person.userId}>{person.name}</option>)}</select></label>
     <label className="field"><span>Date</span><input required type="date" value={date} onChange={(event) => setDate(event.target.value)}/></label>
     </div>

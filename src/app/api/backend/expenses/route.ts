@@ -15,6 +15,35 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid expense.' }, { status: 400 });
     const input = parsed.data;
 
+    const { data: member } = await auth
+      .from('household_members')
+      .select('id, role')
+      .eq('household_id', input.householdId)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!member) {
+      return NextResponse.json({ error: 'Household access denied' }, { status: 403 });
+    }
+
+    if (input.category) {
+      const { data: category } = await auth
+        .from('expense_categories')
+        .select('name')
+        .eq('id', input.category)
+        .maybeSingle();
+
+      if (category && category.name.trim().toLowerCase() === 'groceries') {
+        if (member.role !== 'admin') {
+          return NextResponse.json(
+            { error: 'Only household admins can upload grocery expenses.' },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     const split = calculateShares(input.amount, input.participants, input.splitMethod);
     const shares = Object.entries(split).map(([userId, amount]) => ({
       user_id: userId,

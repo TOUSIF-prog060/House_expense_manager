@@ -43,7 +43,10 @@ export default async function ExpenseDetailsPage({ params }: { params: Promise<{
     .eq('user_id', user.id)
     .maybeSingle();
 
-  const canEdit = expense.created_by === user.id || membership?.role === 'admin';
+  const isGroceries = category.trim().toLowerCase() === 'groceries';
+  const canEdit = isGroceries
+    ? membership?.role === 'admin'
+    : (expense.created_by === user.id || membership?.role === 'admin');
 
   const attachments = (expense.expense_attachments as Array<{ id: string; object_path: string; mime_type: string }> | null) ?? [];
   let signedReceiptUrl: string | null = null;

@@ -24,6 +24,29 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
     const { id } = await context.params;
 
+    const { data: existingExpense } = await auth
+      .from('expenses')
+      .select('household_id, created_by, category_id, expense_categories(name)')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (existingExpense) {
+      const isGroceries = (existingExpense.expense_categories as { name?: string } | null)?.name?.toLowerCase() === 'groceries';
+      if (isGroceries) {
+        const { data: membership } = await auth
+          .from('household_members')
+          .select('role')
+          .eq('household_id', existingExpense.household_id)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (membership?.role !== 'admin') {
+          return NextResponse.json({ error: 'Only household admins can edit grocery expenses.' }, { status: 403 });
+        }
+      }
+    }
+
     const shares = parsed.data.shares.map((share) => ({
       user_id: share.user_id,
       share_amount: Number(share.share_amount),
@@ -96,6 +119,29 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
     if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
 
     const { id } = await context.params;
+
+    const { data: existingExpense } = await auth
+      .from('expenses')
+      .select('household_id, created_by, category_id, expense_categories(name)')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (existingExpense) {
+      const isGroceries = (existingExpense.expense_categories as { name?: string } | null)?.name?.toLowerCase() === 'groceries';
+      if (isGroceries) {
+        const { data: membership } = await auth
+          .from('household_members')
+          .select('role')
+          .eq('household_id', existingExpense.household_id)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (membership?.role !== 'admin') {
+          return NextResponse.json({ error: 'Only household admins can delete grocery expenses.' }, { status: 403 });
+        }
+      }
+    }
 
     const { error } = await auth.rpc('delete_expense', { p_expense_id: id });
     if (error) throw error;

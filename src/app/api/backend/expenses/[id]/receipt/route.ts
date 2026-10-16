@@ -19,12 +19,30 @@ export async function POST(
 
     const { data: expense, error: expenseError } = await supabase
       .from('expenses')
-      .select('id, household_id')
+      .select('id, household_id, category_id, expense_categories(name)')
       .eq('id', expenseId)
       .maybeSingle();
 
     if (expenseError || !expense) {
       return NextResponse.json({ error: 'Expense not found or access denied.' }, { status: 404 });
+    }
+
+    const categoryName = (expense.expense_categories as { name?: string } | null)?.name ?? '';
+    if (categoryName.trim().toLowerCase() === 'groceries') {
+      const { data: membership } = await supabase
+        .from('household_members')
+        .select('role')
+        .eq('household_id', expense.household_id)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (membership?.role !== 'admin') {
+        return NextResponse.json(
+          { error: 'Only household admins can upload receipts for grocery expenses.' },
+          { status: 403 }
+        );
+      }
     }
 
     const formData = await request.formData();

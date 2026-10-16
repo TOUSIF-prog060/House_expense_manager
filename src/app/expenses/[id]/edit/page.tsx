@@ -23,7 +23,7 @@ export default async function EditExpensePage({ params }: { params: Promise<{ id
 
   const { data: expense } = await supabase
     .from('expenses')
-    .select('*, expense_shares(*)')
+    .select('*, expense_shares(*), expense_categories(name)')
     .eq('id', id)
     .eq('household_id', household.id)
     .maybeSingle();
@@ -31,6 +31,12 @@ export default async function EditExpensePage({ params }: { params: Promise<{ id
   if (!expense) notFound();
 
   const membership = members.find((m) => m.user_id === user.id);
+  const isGroceries = (expense.expense_categories as { name?: string } | null)?.name?.toLowerCase() === 'groceries';
+
+  if (isGroceries && membership?.role !== 'admin') {
+    redirect(`/expenses/${id}`);
+  }
+
   if (expense.created_by !== user.id && membership?.role !== 'admin') {
     redirect(`/expenses/${id}`);
   }
