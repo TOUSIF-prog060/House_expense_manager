@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/database.types';
+import { autoCategorizeSupplyItem } from '@/lib/supplies/categories';
 
 type SupplyUpdate = Database['public']['Tables']['supplies']['Update'];
 
@@ -50,6 +51,9 @@ export async function PATCH(
         return NextResponse.json({ error: 'Item name must be between 1 and 120 characters.' }, { status: 400 });
       }
       updates.name = trimmed;
+      if (!body.category) {
+        updates.category = autoCategorizeSupplyItem(trimmed);
+      }
     }
 
     if (body.quantity !== undefined) {

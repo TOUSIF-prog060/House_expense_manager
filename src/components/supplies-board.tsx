@@ -13,12 +13,15 @@ import {
   Receipt,
   Search,
   ShoppingCart,
+  Sparkles,
   Trash2,
   X,
 } from 'lucide-react';
 import {
   DEFAULT_SUPPLY_CATEGORIES,
+  autoCategorizeSupplyItem,
   getCategoryMeta,
+  parseSupplyInput,
 } from '@/lib/supplies/categories';
 
 export type SupplyItem = {
@@ -60,8 +63,9 @@ export function SuppliesBoard({
   const [shoppingMode, setShoppingMode] = useState(false);
   const [showPurchasedGroup, setShowPurchasedGroup] = useState(true);
 
-  // Quick Add State
+  // Quick Add State (Item + Quantity only)
   const [quickName, setQuickName] = useState('');
+  const [quickQuantity, setQuickQuantity] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
   // Detailed Add / Edit Modal State
@@ -69,10 +73,7 @@ export function SuppliesBoard({
   const [editingItem, setEditingItem] = useState<SupplyItem | null>(null);
   const [formName, setFormName] = useState('');
   const [formQuantity, setFormQuantity] = useState('');
-  const [formCategory, setFormCategory] = useState('Groceries');
   const [formNotes, setFormNotes] = useState('');
-  const [customCategory, setCustomCategory] = useState('');
-  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [formError, setFormError] = useState('');
   const [formBusy, setFormBusy] = useState(false);
 
@@ -84,6 +85,15 @@ export function SuppliesBoard({
   const profileMap = useMemo(() => {
     return new Map(profiles.map((p) => [p.id, p.display_name]));
   }, [profiles]);
+
+  // Real-time automatic category inference
+  const quickAutoCategory = useMemo(() => {
+    return quickName.trim() ? autoCategorizeSupplyItem(quickName) : null;
+  }, [quickName]);
+
+  const formAutoCategory = useMemo(() => {
+    return formName.trim() ? autoCategorizeSupplyItem(formName) : 'Groceries';
+  }, [formName]);
 
   // Statistics
   const totalCount = supplies.length;
@@ -167,21 +177,28 @@ export function SuppliesBoard({
     }
   }
 
-  // Quick Add handler
+  // Quick Add handler (Uploads Item and Quantity; auto-determines category)
   async function handleQuickAdd(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = quickName.trim();
-    if (!trimmed) return;
+    const trimmedInput = quickName.trim();
+    if (!trimmedInput) return;
 
     setIsAdding(true);
     try {
+      // If user typed quantity inline (e.g. "Milk 2L"), parse it cleanly
+      const parsed = parseSupplyInput(trimmedInput);
+      const finalName = parsed.name || trimmedInput;
+      const finalQuantity = quickQuantity.trim() || parsed.quantity;
+      const finalCategory = autoCategorizeSupplyItem(finalName);
+
       const res = await fetch('/api/backend/supplies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           householdId,
-          name: trimmed,
-          category: selectedCategory !== 'all' ? selectedCategory : 'Groceries',
+          name: finalName,
+          quantity: finalQuantity || null,
+          category: finalCategory,
         }),
       });
 
@@ -192,6 +209,7 @@ export function SuppliesBoard({
 
       setSupplies((prev) => [json.data, ...prev]);
       setQuickName('');
+      setQuickQuantity('');
       router.refresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error adding item');
@@ -205,9 +223,6 @@ export function SuppliesBoard({
     setEditingItem(null);
     setFormName('');
     setFormQuantity('');
-    setFormCategory('Groceries');
-    setIsCustomCategory(false);
-    setCustomCategory('');
     setFormNotes('');
     setFormError('');
     setModalOpen(true);
@@ -218,37 +233,26 @@ export function SuppliesBoard({
     setEditingItem(item);
     setFormName(item.name);
     setFormQuantity(item.quantity ?? '');
-    const isPredefined = DEFAULT_SUPPLY_CATEGORIES.some(
-      (c) => c.name.toLowerCase() === item.category.toLowerCase()
-    );
-    if (isPredefined) {
-      setFormCategory(item.category);
-      setIsCustomCategory(false);
-      setCustomCategory('');
-    } else {
-      setFormCategory('custom');
-      setIsCustomCategory(true);
-      setCustomCategory(item.category);
-    }
     setFormNotes(item.notes ?? '');
     setFormError('');
     setModalOpen(true);
   }
 
-  // Save Modal Form (Add or Edit)
+  // Save Modal Form (Add or Edit) - Category is automatically understood!
   async function handleSaveModal(e: React.FormEvent) {
     e.preventDefault();
     setFormError('');
 
-    const trimmedName = formName.trim();
-    if (!trimmedName) {
+    const trimmedInput = formName.trim();
+    if (!trimmedInput) {
       setFormError('Please enter an item name.');
       return;
     }
 
-    const finalCategory = isCustomCategory
-      ? (customCategory.trim() || 'Other')
-      : formCategory;
+    const parsed = parseSupplyInput(trimmedInput);
+    const finalName = parsed.name || trimmedInput;
+    const finalQuantity = formQuantity.trim() || parsed.quantity;
+    const finalCategory = autoCategorizeSupplyItem(finalName);
 
     setFormBusy(true);
 
@@ -259,8 +263,8 @@ export function SuppliesBoard({
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: trimmedName,
-            quantity: formQuantity.trim() || null,
+            name: finalName,
+            quantity: finalQuantity || null,
             category: finalCategory,
             notes: formNotes.trim() || null,
           }),
@@ -280,8 +284,8 @@ export function SuppliesBoard({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             householdId,
-            name: trimmedName,
-            quantity: formQuantity.trim() || null,
+            name: finalName,
+            quantity: finalQuantity || null,
             category: finalCategory,
             notes: formNotes.trim() || null,
           }),
@@ -352,7 +356,7 @@ export function SuppliesBoard({
         <div>
           <span className="eyebrow">HOUSEHOLD PANTRY & GROCERY BOARD</span>
           <h1>Supplies Board</h1>
-          <p>Keep shared items stocked and coordinate restocks with housemates.</p>
+          <p>Easily track needed items and quantities. Categories are automatically organized for you.</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
@@ -409,25 +413,46 @@ export function SuppliesBoard({
         </div>
       </div>
 
-      {/* Quick Add Form Bar */}
+      {/* Fast 2-field Quick Add Bar: Item & Quantity (Auto-categorized) */}
       <form className="supplies-quick-add-form" onSubmit={handleQuickAdd}>
-        <div className="quick-add-input-wrap">
-          <input
-            type="text"
-            className="quick-add-input"
-            placeholder="Quick add: e.g. Dish soap, Milk, Olive oil..."
-            value={quickName}
-            onChange={(e) => setQuickName(e.target.value)}
-            disabled={isAdding}
-          />
-          <button
-            type="submit"
-            className="button button-primary quick-add-btn"
-            disabled={!quickName.trim() || isAdding}
-          >
-            <Plus size={16} />
-            <span>Add</span>
-          </button>
+        <div className="quick-add-container">
+          <div className="quick-add-input-wrap">
+            <input
+              type="text"
+              className="quick-add-input"
+              placeholder="Item name (e.g. Milk, Dish soap, Apples, Bread...)"
+              value={quickName}
+              onChange={(e) => setQuickName(e.target.value)}
+              disabled={isAdding}
+            />
+            <input
+              type="text"
+              className="quick-add-qty-input"
+              placeholder="Qty (e.g. 2L, 1 kg, 3 packs)"
+              value={quickQuantity}
+              onChange={(e) => setQuickQuantity(e.target.value)}
+              disabled={isAdding}
+            />
+            {quickAutoCategory && (
+              <div
+                className="quick-auto-cat-preview"
+                title="Category is detected automatically"
+              >
+                <Sparkles size={13} className="sparkle-icon" />
+                <span>
+                  {getCategoryMeta(quickAutoCategory).emoji} {quickAutoCategory}
+                </span>
+              </div>
+            )}
+            <button
+              type="submit"
+              className="button button-primary quick-add-btn"
+              disabled={!quickName.trim() || isAdding}
+            >
+              <Plus size={16} />
+              <span>Add</span>
+            </button>
+          </div>
         </div>
       </form>
 
@@ -634,12 +659,12 @@ export function SuppliesBoard({
         )}
       </div>
 
-      {/* Add / Edit Supply Modal */}
+      {/* Simple Add / Edit Supply Modal (Just Item & Quantity) */}
       {modalOpen && (
         <div className="modal-backdrop" onClick={() => setModalOpen(false)}>
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{editingItem ? 'Edit Supply Item' : 'Add to Supplies Board'}</h2>
+              <h2>{editingItem ? 'Edit Supply' : 'Add to Supplies Board'}</h2>
               <button
                 type="button"
                 className="icon-button"
@@ -663,65 +688,55 @@ export function SuppliesBoard({
                     required
                     type="text"
                     maxLength={120}
-                    placeholder="e.g. Dishwashing liquid, Almond Milk, Towels"
+                    placeholder="e.g. Dish soap, Almond milk, Bread, Toothpaste, Eggs"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                   />
                 </label>
 
-                <div className="form-row-2">
-                  <label className="field">
-                    <span>Quantity / Size <em>optional</em></span>
-                    <input
-                      type="text"
-                      maxLength={60}
-                      placeholder="e.g. 2 bottles, 500g, 1 pack"
-                      value={formQuantity}
-                      onChange={(e) => setFormQuantity(e.target.value)}
-                    />
-                  </label>
+                <label className="field">
+                  <span>Quantity / Size <em>optional</em></span>
+                  <input
+                    type="text"
+                    maxLength={60}
+                    placeholder="e.g. 2L, 500g, 2 bottles, 1 pack, 6 pcs"
+                    value={formQuantity}
+                    onChange={(e) => setFormQuantity(e.target.value)}
+                  />
+                </label>
 
-                  <label className="field">
-                    <span>Category</span>
-                    <select
-                      value={isCustomCategory ? 'custom' : formCategory}
-                      onChange={(e) => {
-                        if (e.target.value === 'custom') {
-                          setIsCustomCategory(true);
-                        } else {
-                          setIsCustomCategory(false);
-                          setFormCategory(e.target.value);
-                        }
+                {/* Auto-detected category badge */}
+                <div className="auto-category-box">
+                  <div className="auto-cat-header">
+                    <Sparkles size={14} className="sparkle-icon" />
+                    <span>Auto-Organized Category</span>
+                  </div>
+                  <div className="auto-cat-pill-wrap">
+                    <span
+                      className="supply-cat-tag"
+                      style={{
+                        color: getCategoryMeta(formAutoCategory).color,
+                        backgroundColor: getCategoryMeta(formAutoCategory).bg,
+                        borderColor: getCategoryMeta(formAutoCategory).border,
+                        fontSize: '0.86rem',
+                        padding: '0.3rem 0.75rem',
                       }}
                     >
-                      {DEFAULT_SUPPLY_CATEGORIES.map((cat) => (
-                        <option key={cat.name} value={cat.name}>
-                          {cat.emoji} {cat.name}
-                        </option>
-                      ))}
-                      <option value="custom">✏️ Custom Category...</option>
-                    </select>
-                  </label>
+                      <span>{getCategoryMeta(formAutoCategory).emoji}</span>
+                      <strong>{formAutoCategory}</strong>
+                    </span>
+                    <small className="auto-cat-note">
+                      Automatically understood from item name.
+                    </small>
+                  </div>
                 </div>
 
-                {isCustomCategory && (
-                  <label className="field">
-                    <span>Custom Category Name</span>
-                    <input
-                      type="text"
-                      placeholder="e.g. Party Snacks, Workshop Tools"
-                      value={customCategory}
-                      onChange={(e) => setCustomCategory(e.target.value)}
-                    />
-                  </label>
-                )}
-
                 <label className="field">
-                  <span>Notes / Preferred Brand <em>optional</em></span>
+                  <span>Notes / Brand <em>optional</em></span>
                   <textarea
                     rows={2}
                     maxLength={300}
-                    placeholder="e.g. Specific brand, only unsweetened, or buy from supermarket"
+                    placeholder="e.g. Get the unsalted one or specific brand"
                     value={formNotes}
                     onChange={(e) => setFormNotes(e.target.value)}
                   />

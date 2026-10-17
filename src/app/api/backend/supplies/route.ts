@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
+import { autoCategorizeSupplyItem, parseSupplyInput } from '@/lib/supplies/categories';
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,10 +53,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Household ID is required.' }, { status: 400 });
     }
 
-    const trimmedName = typeof name === 'string' ? name.trim() : '';
-    if (!trimmedName || trimmedName.length > 120) {
+    const trimmedInput = typeof name === 'string' ? name.trim() : '';
+    if (!trimmedInput || trimmedInput.length > 120) {
       return NextResponse.json({ error: 'Item name must be between 1 and 120 characters.' }, { status: 400 });
     }
+
+    const parsed = parseSupplyInput(trimmedInput);
+    const finalName = parsed.name || trimmedInput;
+    const finalQuantity = (typeof quantity === 'string' && quantity.trim()) ? quantity.trim() : parsed.quantity;
+    const resolvedCategory = (typeof category === 'string' && category.trim())
+      ? category.trim()
+      : autoCategorizeSupplyItem(finalName);
 
     const { data: membership } = await auth
       .from('household_members')
@@ -71,9 +79,9 @@ export async function POST(request: NextRequest) {
 
     const newSupply = {
       household_id: householdId,
-      name: trimmedName,
-      quantity: typeof quantity === 'string' && quantity.trim() ? quantity.trim() : null,
-      category: typeof category === 'string' && category.trim() ? category.trim() : 'Groceries',
+      name: finalName,
+      quantity: finalQuantity,
+      category: resolvedCategory,
       notes: typeof notes === 'string' && notes.trim() ? notes.trim() : null,
       is_purchased: false,
       added_by: user.id,
