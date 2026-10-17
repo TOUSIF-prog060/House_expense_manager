@@ -17,6 +17,7 @@ cat_feedings:Table<{id:string;household_id:string;meal_slot_id:string|null;feedi
 push_subscriptions:Table<{id:string;user_id:string;household_id:string|null;endpoint:string;p256dh:string;auth:string;user_agent?:string|null;device_type?:string|null;last_used_at?:string|null;is_active:boolean;expense_enabled:boolean;cat_enabled:boolean;reminder_enabled:boolean;payment_enabled:boolean;created_at:string;updated_at:string}>;
 notifications:Table<{id:string;user_id:string;household_id:string;type:string;title:string;body:string;entity_id:string|null;entity_type:string|null;read_at:string|null;created_at:string}>;
 activity_events:Table<{id:string;household_id:string;actor:string;event_type:string;entity_type:string;entity_id:string|null;metadata:Json;created_at:string}>;
+supplies:Table<{id:string;household_id:string;name:string;quantity:string|null;category:string;notes:string|null;is_purchased:boolean;added_by:string|null;purchased_by:string|null;purchased_at:string|null;created_at:string;updated_at:string}>;
 };
 type Fk<Name extends string,Col extends string,To extends string,ToCol extends string>={foreignKeyName:Name;columns:[Col];isOneToOne:false;referencedRelation:To;referencedColumns:[ToCol]};
 type Hm=[Fk<'household_members_household_id_fkey','household_id','households','id'>,Fk<'household_members_user_id_fkey','user_id','profiles','id'>];

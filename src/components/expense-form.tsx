@@ -17,6 +17,8 @@ export function ExpenseForm({
   categories,
   currentUserId,
   initialDate,
+  initialTitle,
+  initialCategory,
   isAdmin = false,
 }: {
   householdId: string;
@@ -24,12 +26,29 @@ export function ExpenseForm({
   categories: Category[];
   currentUserId: string;
   initialDate?: string;
+  initialTitle?: string;
+  initialCategory?: string;
   isAdmin?: boolean;
 }) {
+  const excludedCategories = useMemo(() => new Set(['cat food', 'cat litter', 'cat supplies']), []);
+  const availableCategories = useMemo(
+    () => categories.filter((c) => !excludedCategories.has(c.name.trim().toLowerCase())),
+    [categories, excludedCategories]
+  );
   const router = useRouter();
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(initialTitle || '');
   const [amount, setAmount] = useState('');
-  const initialCat = (isAdmin ? categories[0] : categories.find((c) => !isGroceryCategory(c.name))) ?? categories[0];
+  const matchedCat = initialCategory
+    ? availableCategories.find(
+        (c) =>
+          c.id === initialCategory ||
+          c.name.toLowerCase() === initialCategory.toLowerCase()
+      )
+    : undefined;
+  const initialCat =
+    matchedCat && (isAdmin || !isGroceryCategory(matchedCat.name))
+      ? matchedCat
+      : ((isAdmin ? availableCategories[0] : availableCategories.find((c) => !isGroceryCategory(c.name))) ?? availableCategories[0]);
   const [categoryId, setCategoryId] = useState(initialCat?.id ?? '');
   const [paidBy, setPaidBy] = useState(currentUserId);
   const [date, setDate] = useState(initialDate || new Date().toLocaleDateString('en-CA'));
@@ -88,7 +107,7 @@ export function ExpenseForm({
     {error && <div className="form-error" role="alert">{error}</div>}
     <div className="form-grid"><label className="field field-wide"><span>What was it for?</span><input required maxLength={120} placeholder={isAdmin ? "e.g. Groceries" : "e.g. Electricity bill"} value={title} onChange={(event) => setTitle(event.target.value)}/></label>
     <label className="field"><span>Amount</span><div className="amount-input"><span>₹</span><input required inputMode="decimal" pattern="\d+(\.\d{1,2})?" placeholder="0.00" value={amount} onChange={(event) => setAmount(event.target.value)}/></div></label>
-    <label className="field"><span>Category</span><select value={categoryId} onChange={(event) => updateCategory(event.target.value)}>{categories.map((category) => <option value={category.id} key={category.id} disabled={!isAdmin && isGroceryCategory(category.name)}>{category.name}{!isAdmin && isGroceryCategory(category.name) ? ' (Admin only)' : ''}</option>)}</select>{!isAdmin && <small style={{ color: 'var(--muted, #888)', marginTop: '0.25rem', display: 'block' }}>Groceries upload is restricted to household admins.</small>}</label>
+    <label className="field"><span>Category</span><select value={categoryId} onChange={(event) => updateCategory(event.target.value)}>{availableCategories.map((category) => <option value={category.id} key={category.id} disabled={!isAdmin && isGroceryCategory(category.name)}>{category.name}{!isAdmin && isGroceryCategory(category.name) ? ' (Admin only)' : ''}</option>)}</select>{!isAdmin && <small style={{ color: 'var(--muted, #888)', marginTop: '0.25rem', display: 'block' }}>Groceries upload is restricted to household admins.</small>}</label>
     <label className="field"><span>Paid by</span><select value={paidBy} onChange={(event) => setPaidBy(event.target.value)}>{people.map((person) => <option key={person.userId} value={person.userId}>{person.name}</option>)}</select></label>
     <label className="field"><span>Date</span><input required type="date" value={date} onChange={(event) => setDate(event.target.value)}/></label>
     </div>

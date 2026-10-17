@@ -28,6 +28,7 @@ export async function middleware(request: NextRequest) {
     '/expenses',
     '/cat',
     '/settlement',
+    '/supplies',
     '/profile',
     '/settings',
     '/onboarding',

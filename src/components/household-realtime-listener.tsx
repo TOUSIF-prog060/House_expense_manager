@@ -50,6 +50,11 @@ export function HouseholdRealtimeListener({ householdId }: { householdId?: strin
         { event: '*', schema: 'public', table: 'notifications' },
         () => { router.refresh(); }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'supplies', filter: `household_id=eq.${householdId}` },
+        () => { router.refresh(); }
+      )
       .subscribe();
 
     return () => {

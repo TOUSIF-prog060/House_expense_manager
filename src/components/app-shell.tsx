@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Cat, House, LogOut, Plus, ReceiptText, Scale, UserRound } from 'lucide-react';
+import { Bell, Cat, ClipboardList, House, LogOut, Plus, ReceiptText, Scale, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -11,6 +11,7 @@ const navItems = [
   { href: '/expenses', label: 'Expenses', icon: ReceiptText },
   { href: '/cat', label: 'Cat', icon: Cat },
   { href: '/settlement', label: 'Settle', icon: Scale },
+  { href: '/supplies', label: 'Supplies', icon: ClipboardList },
   { href: '/profile', label: 'Profile', icon: UserRound },
 ];
 
@@ -50,7 +51,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isLinkActive = (href: string) => {
     return (
       currentPath === href ||
-      (href === '/expenses' && currentPath.startsWith('/expenses') && currentPath !== '/expenses/new')
+      (href === '/expenses' && currentPath.startsWith('/expenses') && currentPath !== '/expenses/new') ||
+      (href === '/supplies' && currentPath.startsWith('/supplies'))
     );
   };
 

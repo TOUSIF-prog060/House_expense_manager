@@ -11,9 +11,9 @@ export const metadata: Metadata = { title: 'Add an expense' };
 export default async function NewExpensePage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; title?: string; category?: string }>;
 }) {
-  const { date: paramDate } = await searchParams;
+  const { date: paramDate, title: paramTitle, category: paramCategory } = await searchParams;
 
   let auth;
   try {
@@ -33,11 +33,15 @@ export default async function NewExpensePage({
     .select('*')
     .or(`household_id.is.null,household_id.eq.${household.id}`);
 
-  const categories = (categoryRows ?? []).map((row) => ({
-    id: row.id,
-    name: row.name,
-    is_pet: Boolean(row.is_pet),
-  }));
+  const excludedCategories = new Set(['cat food', 'cat litter', 'cat supplies']);
+
+  const categories = (categoryRows ?? [])
+    .filter((row) => !excludedCategories.has(row.name.trim().toLowerCase()))
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      is_pet: Boolean(row.is_pet),
+    }));
 
   const people = members.map((member) => ({
     userId: member.user_id,
@@ -66,6 +70,8 @@ export default async function NewExpensePage({
           categories={categories}
           currentUserId={user.id}
           initialDate={initialDate}
+          initialTitle={paramTitle}
+          initialCategory={paramCategory}
           isAdmin={isAdmin}
         />
       </section>
