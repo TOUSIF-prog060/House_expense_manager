@@ -1,104 +1,74 @@
-# OurHome
+# OurHome (Expense Manager) — Current Features
 
-A private, mobile-first household app for shared expenses, accurate settlement, and cat-care check-ins. OurHome is built for a small apartment household, while its membership model supports additional members.
+A private, mobile-first household application designed for shared apartment living. It brings shared expense tracking, instant UPI debt settlements, race-condition-proof pet care, and a collaborative grocery/supplies board into a single synchronized space.
 
-## Progress
+> 📖 For detailed usage workflows, see the [User Guide](USER_GUIDE.md).
 
-- [x] Responsive Next.js application shell, onboarding, and navigation
-- [x] Shared, unauthenticated household access
-- [x] Google Sheets server client and explicit, repeatable workbook schema initializer
-- [x] Sheets-backed household creation/join, expense create/edit/delete, cat feeding, payments, and activity routes
-- [x] Sheets-backed dashboard, expense, cat-care, settlement, profile, and settings reads
-- [x] Equal, exact, percentage, and paise-safe split calculations
-- [ ] Receipt upload (Google Drive credentials and private file API still needed)
-- [x] Cat meal slots, feeding history, extra feeding, and duplicate check in the API (Sheets cannot enforce a unique constraint)
-- [x] Month totals, member balances, simplified settlements, and payment recording
-- [x] Installable PWA shell, offline banner/cache, and install instructions
-- [x] Notification preference storage; push delivery remains unconnected
-- [x] Financial and Sheets schema/API setup tests
-- [ ] Configure the Google service account, then run live household tests
-- [ ] Add Google Drive receipts and a push sender that reads Sheets-backed subscriptions
-- [ ] Verify production iOS/Android install and push behavior on real devices
-- [ ] Complete accessibility, RLS, concurrency, and end-to-end security checks
+---
 
-## Stack
+## 1. Shared Expenses & Bill Splitting
 
-- Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4, Lucide
-- Google Sheets API as household data store
-- Unauthenticated shared identity; every visitor acts as the same household member
-- Web Push shell exists; delivery needs a Sheets-aware sender
-- Vercel hosting (HTTPS required for production web push)
+- **Paise-Safe Financial Engine**: All calculations are computed in integer paise (₹0.01 precision) to eliminate floating-point rounding errors and phantom cents.
+- **Flexible Split Methods**:
+  - **Equal Split**: Evenly divided among participants with automated remainder distribution.
+  - **Exact Amounts**: Custom rupee amounts allocated per member.
+  - **Percentage Split**: Precise percentage allocations totaling 100%.
+- **Participant Exclusion**: Checkbox toggles to exclude specific members from any bill.
+- **Admin Grocery Policy**: When the expense category is **Groceries**, creation is restricted to household admins to prevent duplicate or uncoordinated bulk pantry orders.
+- **Receipt Attachments**: Upload and view JPG, PNG, WEBP, or PDF receipts (up to 10 MB) backed by private storage with secure signed URLs.
+- **Edit & Delete**: Full edit and deletion controls with automatic recalculation of member shares.
+- **Date & Member Filtering**: Filter expenses by member, month, or custom date intervals.
 
-## Requirements
+---
 
-- Node.js 20.9 or newer and npm
-- Google Cloud project with Sheets API enabled and a service account
+## 2. Debt Settlement & Instant UPI Payments
 
-## Install and run
+- **Live Net Balances**: Real-time balance calculations showing who owes whom across all roommates.
+- **Debt Simplification**: Graph-based algorithm resolves cyclic multi-party debts into the minimum number of direct transfers.
+- **One-Tap UPI Deep Linking**:
+  - Roommates register their UPI ID (`username@bank`) on their profile.
+  - Tapping **Pay via UPI** launches native payment apps (Google Pay, PhonePe, Paytm, BHIM) on mobile with prefilled recipient and amount via `upi://pay`.
+  - Fallback button to copy the recipient's UPI VPA directly to clipboard.
+- **Settlement Recording**: Log payments made via UPI, cash, or bank transfer with optional notes.
+- **Payment History**: Immutable audit log of past settlements with time-period filters.
 
-```sh
-npm install
-cp .env.example .env.local
-npm run dev
-```
+---
 
-The app opens directly into the household UI. Household data routes use the configured Google Sheet.
+## 3. Pet Care & Feeding Coordination
 
-## Environment variables
+- **Multi-Pet Management**: Register and manage multiple cats or pets within the household.
+- **Scheduled Meal Slots**: Customizable meal times (defaulting to *Morning*, *Afternoon*, and *Evening*) tailored to your household's routine.
+- **Race-Condition-Proof Feeding**:
+  - Enforced by a database-level unique constraint (`cat_feedings_scheduled_unique`).
+  - If two roommates tap "Feed" concurrently, the second write is rejected with an HTTP 409 `CAT_ALREADY_FED` warning, displaying who recorded the meal and at what time.
+- **Extra Meals & Treats**: Log treats, medicine, or unscheduled feedings with custom notes.
+- **Feeding Date Navigator**: History calendar to browse past days' feeding logs and verify meal completions.
 
-Copy `.env.example` to `.env.local` and fill the Google Sheets values. Never put service credentials in a `NEXT_PUBLIC_` variable or commit them.
+---
 
-```env
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=YOUR_VAPID_PUBLIC_KEY
-```
+## 4. Supplies & Grocery Board
 
-Authentication is disabled. All visitors share one fixed identity and have the same household access, including admin actions. Anyone who can reach the app can read and change the workbook through the app. Do not deploy it on a public URL or store sensitive household data unless you add an access-control layer in front of the app. Google service-account credentials remain server-only.
+- **Smart Natural-Language Input**: Automatically parses input into item name and quantity (e.g., typing `"Milk 2L"` or `"Eggs 12 pcs"`).
+- **Automatic Categorization**: Keyword-based classification into 8 categories:
+  - *Groceries*, *Vegetables & Fruits*, *Dairy & Eggs*, *Cleaning Supplies*, *Personal Care*, *Household Essentials*, *Cat & Pets*, and *Other*.
+- **Supermarket Shopping Mode**: High-contrast, tactile checklist interface designed for one-handed mobile use while walking store aisles.
+- **Convert to Expense**: Convert any purchased supply item directly into a shared household expense with one tap, prefilling details and category.
+- **Status & Search Filters**: Filter by category, toggle between pending and purchased items, and search supplies in real time.
 
-### Google Sheets backend
+---
 
-The target workbook is **MR HEIGHTS** (`1AhliDIzXqOsaKW_81IX50tX40WaD7dlgjFwE64Z-hIY`). The server client is in `src/lib/backend/google-sheets.ts`; it uses a Google service account and never exposes its credentials to browser code. Add these values to `.env.local` (do not commit that file):
+## 5. Household Administration & Access Control
 
+- **Role-Based Permissions**: Admin and Member roles with administrative control over settings and grocery purchases.
+- **Secure Household Invites**: Cryptographic SHA-256 invite codes with automatic expiration dates to safely onboard roommates.
+- **Timezone & Currency Settings**: Configurable per household (e.g., `Asia/Kolkata`, `INR`).
+- **Profile & UPI Management**: Edit display name, avatar, and saved UPI ID.
+- **Session Security**: Server-side cookie sessions powered by `@supabase/ssr` with Row-Level Security (RLS) guaranteeing strict household data isolation.
 
-Create a service account in a Google Cloud project, enable the Google Sheets API, create a JSON key, and share **MR HEIGHTS** with the service account's `client_email` as an editor. Keep the key private. After setting the variables, open Household settings and choose **Initialize Google Sheets** (or send `POST /api/backend/setup`) to create the app tabs and header rows. Setup is idempotent. It leaves the existing `Sheet1` untouched and fails safely if an app tab already has unexpected headers.
+---
 
-The initial workbook model uses one tab per entity: `profiles`, `households`, `household_members`, `household_invites`, `expense_categories`, `expenses`, `expense_shares`, `expense_attachments`, `payments`, `meal_slots`, `cat_feedings`, `push_subscriptions`, `notifications`, and `activity_events`. Money is stored as integer paise. Receipt binary files need Google Drive or another private object store; the sheet stores only Drive file IDs. Google Sheets does not provide database row-level security or transactions, so the app API must enforce household membership and concurrent writes need special care. Do not publish the workbook to “anyone with the link.”
+## 6. Mobile Experience & Real-Time Sync
 
-## Receipts and notifications
-
-Receipt upload and push delivery are not connected to the Sheets backend yet. Expense creation is available without a receipt; the app explains when a selected receipt cannot be uploaded. Notification preferences are stored in the workbook, but delivery requires a separate sender. The legacy Supabase storage and push code is not used by current app pages.
-
-## PWA install
-
-The app includes a manifest, standalone mode, theme colors, service worker, offline shell cache, SVG icon, and an install-help route. Android browsers may offer the native install prompt. iPhone users open OurHome in Safari, tap Share, choose **Add to Home Screen**, then launch from the Home Screen before enabling Web Push. Production install/push requires HTTPS.
-
-## Development checks
-
-```sh
-npm run typecheck
-npm run test
-npm run lint
-npm run build
-```
-
-Current tests cover equal rounding, exact shares, percentage splits, excluded participants, settlement calculations, sheet row mapping/schema creation, and authenticated API setup behavior. Live Google API tests still require the service-account credential and workbook permission. Sheets does not provide database transactions or row-level security; review the concurrent-write and household isolation limits before production.
-
-## Deployment to Vercel
-
-1. Import the repository into Vercel.
-2. Set `GOOGLE_SHEETS_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` for the deployment environment. Keep the service account JSON server-only.
-3. Put the app behind a private network or an access-control proxy before exposing it to other networks.
-4. Deploy to an HTTPS domain, then test household setup, receipt access, feeding concurrency, realtime, and push on iOS Home Screen and Android.
-
-## Troubleshooting
-
-- **Sheets connection is unavailable:** check `.env.local`, restart `npm run dev`, and verify the service account can edit the workbook.
-- **Profile/household not visible:** initialize the Sheets tabs and create a household from onboarding.
-- **Receipt upload denied:** confirm the private `receipts` bucket and its folder policies exist and the file is below 10 MB.
-- **Duplicate meal:** the first database insert wins; a duplicate `23505` response means another household member already recorded that slot.
-- **No push prompt:** HTTPS is required in production; the user must explicitly enable it. On iPhone, use the installed Home Screen app.
-- **Push subscription works but no message arrives:** configure/deploy the Edge Function, VAPID secrets, event queue/triggers, and recipient preferences; remove/re-register stale device subscriptions.
-- **Realtime appears stale:** the Sheets-backed implementation does not currently provide realtime synchronization.
-
-## Current scope
-
-Receipt OCR, recurring expenses, reminders' scheduling UI, bank/UPI processing, multiple pets, and app-store releases are intentionally out of the initial implementation. Financial writes are not queued offline.
+- **Installable PWA**: Installable directly from Safari (iOS Add to Home Screen) and Chrome/Brave (Android) as a standalone full-screen app.
+- **Real-Time Synchronisation**: Feedings, new expenses, and supply updates reflect instantly across all roommates' phones without page refreshes via Supabase Realtime.
+- **Offline Indicator**: Visual alert banner warning when offline before attempting financial or feeding writes.

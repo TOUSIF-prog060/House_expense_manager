@@ -138,5 +138,53 @@ describe('Supabase Integration & Business Logic', () => {
         { fromUserId: 'u3', fromName: 'Shailja', toUserId: 'u1', toName: 'Tousif', amountPaise: 1000 },
       ]);
     });
+
+    it('correctly calculates net balances when a member is excluded from an expense', () => {
+      // 3 roommates: u1, u2, u3. Expense of ₹100 paid by u1, only shared between u1 and u2 (₹50 each). u3 excluded.
+      const expenses = [
+        {
+          id: 'exp-1',
+          amount: '100.00',
+          paid_by: 'u1',
+          shares: [
+            { user_id: 'u1', share_amount: '50.00' },
+            { user_id: 'u2', share_amount: '50.00' },
+          ],
+        },
+      ];
+      const members = [{ user_id: 'u1' }, { user_id: 'u2' }, { user_id: 'u3' }];
+
+      const fairShares = new Map<string, number>();
+      members.forEach((m) => fairShares.set(m.user_id, 0));
+
+      for (const exp of expenses) {
+        for (const s of exp.shares) {
+          fairShares.set(s.user_id, (fairShares.get(s.user_id) ?? 0) + Math.round(Number(s.share_amount) * 100));
+        }
+      }
+
+      const balances = members.map((m) => {
+        const paidPaise = expenses
+          .filter((e) => e.paid_by === m.user_id)
+          .reduce((sum, e) => sum + Math.round(Number(e.amount) * 100), 0);
+        const sharePaise = fairShares.get(m.user_id) ?? 0;
+        return {
+          userId: m.user_id,
+          name: m.user_id,
+          balancePaise: paidPaise - sharePaise,
+        };
+      });
+
+      expect(balances).toEqual([
+        { userId: 'u1', name: 'u1', balancePaise: 5000 },  // Owed ₹50
+        { userId: 'u2', name: 'u2', balancePaise: -5000 }, // Owes ₹50
+        { userId: 'u3', name: 'u3', balancePaise: 0 },     // Excluded member owes ₹0
+      ]);
+
+      const transfers = simplifySettlements(balances);
+      expect(transfers).toEqual([
+        { fromUserId: 'u2', fromName: 'u2', toUserId: 'u1', toName: 'u1', amountPaise: 5000 },
+      ]);
+    });
   });
 });

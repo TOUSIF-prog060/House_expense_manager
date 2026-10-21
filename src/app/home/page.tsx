@@ -51,7 +51,7 @@ export default async function HomePage() {
   const monthStart = monthStartInTimezone(now, household.timezone);
   const today = dateKeyInTimezone(now, household.timezone);
 
-  const [mealSlotsRes, feedingsRes, recentExpensesRes, monthExpensesRes, monthSharesRes, petsRes] = await Promise.all([
+  const [mealSlotsRes, feedingsRes, recentExpensesRes, monthExpensesRes, monthSharesRes, petsRes, paymentsRes] = await Promise.all([
     supabase
       .from('meal_slots')
       .select('*')
@@ -85,6 +85,11 @@ export default async function HomePage() {
       .select('*')
       .eq('household_id', household.id)
       .order('created_at', { ascending: true }),
+    supabase
+      .from('payments')
+      .select('*')
+      .eq('household_id', household.id)
+      .gte('payment_date', monthStart),
   ]);
 
   const slots = mealSlotsRes.data ?? [];
@@ -93,6 +98,7 @@ export default async function HomePage() {
   const monthExpenses = monthExpensesRes.data ?? [];
   const monthShares = monthSharesRes.data ?? [];
   const pets = petsRes.data ?? [];
+  const payments = paymentsRes.data ?? [];
 
   const getFeeding = (slotId: string, petId?: string) => {
     if (petId) {
@@ -111,7 +117,15 @@ export default async function HomePage() {
     .filter((row) => row.paid_by === user.id)
     .reduce((sum, row) => sum + Math.round(Number(row.amount) * 100), 0);
   const sharePaise = monthShares.reduce((sum, row) => sum + Math.round(Number(row.share_amount) * 100), 0);
-  const position = paidPaise - sharePaise;
+
+  const paymentsSentPaise = payments
+    .filter((p) => (p.status === 'confirmed' || p.status === 'recorded') && p.from_user === user.id)
+    .reduce((sum, p) => sum + Math.round(Number(p.amount) * 100), 0);
+  const paymentsReceivedPaise = payments
+    .filter((p) => (p.status === 'confirmed' || p.status === 'recorded') && p.to_user === user.id)
+    .reduce((sum, p) => sum + Math.round(Number(p.amount) * 100), 0);
+  const netPaymentsPaise = paymentsSentPaise - paymentsReceivedPaise;
+  const position = paidPaise + netPaymentsPaise - sharePaise;
 
   const profileMap = new Map(profiles.map((p) => [p.id, p.display_name]));
 

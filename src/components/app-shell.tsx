@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Bell, Cat, ClipboardList, House, LogOut, Plus, ReceiptText, Scale, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { ThemeTopbarButton } from './theme-toggle';
 
 const navItems = [
   { href: '/home', label: 'Home', icon: House },
@@ -78,6 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span>Expense Manager<span className="brand-dot">.</span></span>
           </Link>
           <div className="top-actions">
+            <ThemeTopbarButton />
             <Link className="icon-button" href="/notifications" prefetch={true} aria-label="Notifications">
               <Bell size={19} />
             </Link>

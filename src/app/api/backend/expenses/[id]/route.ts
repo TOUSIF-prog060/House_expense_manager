@@ -30,21 +30,29 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       .eq('id', id)
       .maybeSingle();
 
-    if (existingExpense) {
-      const isGroceries = (existingExpense.expense_categories as { name?: string } | null)?.name?.toLowerCase() === 'groceries';
-      if (isGroceries) {
-        const { data: membership } = await auth
-          .from('household_members')
-          .select('role')
-          .eq('household_id', existingExpense.household_id)
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle();
+    if (!existingExpense) {
+      return NextResponse.json({ error: 'Expense not found or access denied.' }, { status: 404 });
+    }
 
-        if (membership?.role !== 'admin') {
-          return NextResponse.json({ error: 'Only household admins can edit grocery expenses.' }, { status: 403 });
-        }
-      }
+    const { data: membership } = await auth
+      .from('household_members')
+      .select('role')
+      .eq('household_id', existingExpense.household_id)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Household access denied' }, { status: 403 });
+    }
+
+    const isGroceries = (existingExpense.expense_categories as { name?: string } | null)?.name?.toLowerCase() === 'groceries';
+    if (isGroceries && membership.role !== 'admin') {
+      return NextResponse.json({ error: 'Only household admins can edit grocery expenses.' }, { status: 403 });
+    }
+
+    if (existingExpense.created_by !== user.id && membership.role !== 'admin') {
+      return NextResponse.json({ error: 'Only the creator or household admin can edit this expense.' }, { status: 403 });
     }
 
     const shares = parsed.data.shares.map((share) => ({
@@ -69,40 +77,37 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         error.message.includes('ambiguous') ||
         error.message.includes('item')
       ) {
-        const { data: existingExpense } = await auth
-          .from('expenses')
-          .select('household_id, created_by, amount')
-          .eq('id', id)
-          .maybeSingle();
-
-        if (existingExpense) {
-          const { createAdminClient } = await import('@/lib/supabase/admin');
-          const admin = createAdminClient();
-          await admin
-            .from('expenses')
-            .update({
-              title: parsed.data.title,
-              amount: Number(parsed.data.amount),
-              expense_date: parsed.data.expenseDate,
-              notes: parsed.data.notes ?? null,
-            })
-            .eq('id', id);
-
-          await admin.from('expense_shares').delete().eq('expense_id', id);
-
-          if (shares.length > 0) {
-            await admin.from('expense_shares').insert(
-              shares.map((s) => ({
-                expense_id: id,
-                user_id: s.user_id,
-                share_amount: s.share_amount,
-                share_percentage: s.share_percentage,
-              }))
-            );
-          }
-
-          return NextResponse.json({ ok: true });
+        // Re-verify authorization explicitly before performing fallback admin update
+        if (existingExpense.created_by !== user.id && membership.role !== 'admin') {
+          return NextResponse.json({ error: 'Only the creator or household admin can edit this expense.' }, { status: 403 });
         }
+
+        const { createAdminClient } = await import('@/lib/supabase/admin');
+        const admin = createAdminClient();
+        await admin
+          .from('expenses')
+          .update({
+            title: parsed.data.title,
+            amount: Number(parsed.data.amount),
+            expense_date: parsed.data.expenseDate,
+            notes: parsed.data.notes ?? null,
+          })
+          .eq('id', id);
+
+        await admin.from('expense_shares').delete().eq('expense_id', id);
+
+        if (shares.length > 0) {
+          await admin.from('expense_shares').insert(
+            shares.map((s) => ({
+              expense_id: id,
+              user_id: s.user_id,
+              share_amount: s.share_amount,
+              share_percentage: s.share_percentage,
+            }))
+          );
+        }
+
+        return NextResponse.json({ ok: true });
       }
       throw error;
     }
@@ -126,25 +131,38 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
       .eq('id', id)
       .maybeSingle();
 
-    if (existingExpense) {
-      const isGroceries = (existingExpense.expense_categories as { name?: string } | null)?.name?.toLowerCase() === 'groceries';
-      if (isGroceries) {
-        const { data: membership } = await auth
-          .from('household_members')
-          .select('role')
-          .eq('household_id', existingExpense.household_id)
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle();
+    if (!existingExpense) {
+      return NextResponse.json({ error: 'Expense not found or access denied.' }, { status: 404 });
+    }
 
-        if (membership?.role !== 'admin') {
-          return NextResponse.json({ error: 'Only household admins can delete grocery expenses.' }, { status: 403 });
-        }
-      }
+    const { data: membership } = await auth
+      .from('household_members')
+      .select('role')
+      .eq('household_id', existingExpense.household_id)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Household access denied' }, { status: 403 });
+    }
+
+    const isGroceries = (existingExpense.expense_categories as { name?: string } | null)?.name?.toLowerCase() === 'groceries';
+    if (isGroceries && membership.role !== 'admin') {
+      return NextResponse.json({ error: 'Only household admins can delete grocery expenses.' }, { status: 403 });
+    }
+
+    if (existingExpense.created_by !== user.id && membership.role !== 'admin') {
+      return NextResponse.json({ error: 'Only the creator or household admin can delete this expense.' }, { status: 403 });
     }
 
     const { error } = await auth.rpc('delete_expense', { p_expense_id: id });
-    if (error) throw error;
+    if (error) {
+      if (error.code === '42501' || error.message.includes('denied')) {
+        return NextResponse.json({ error: error.message }, { status: 403 });
+      }
+      throw error;
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

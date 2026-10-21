@@ -4,7 +4,11 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendHouseholdPushNotification } from '@/lib/notifications/push-service';
 
-const schema = z.object({ householdId: z.string().uuid(), note: z.string().max(500).optional() });
+const schema = z.object({
+  householdId: z.string().uuid(),
+  petId: z.string().uuid().optional(),
+  note: z.string().max(500).optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +18,11 @@ export async function POST(request: NextRequest) {
     const parsed = schema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: 'Invalid feeding.' }, { status: 400 });
 
-    const { data, error } = await supabase.rpc('record_extra_feeding', { p_household_id: parsed.data.householdId, p_note: parsed.data.note ?? undefined });
+    const { data, error } = await supabase.rpc('record_extra_feeding', {
+      p_household_id: parsed.data.householdId,
+      p_note: parsed.data.note ?? undefined,
+      p_pet_id: parsed.data.petId ?? undefined,
+    });
 
     if (error) {
       if (error.code === '42501' || error.message.includes('row-level security')) {
@@ -44,15 +52,20 @@ export async function POST(request: NextRequest) {
           day: '2-digit',
         }).format(new Date());
 
+        const insertPayload: Record<string, unknown> = {
+          household_id: parsed.data.householdId,
+          feeding_date: today,
+          fed_by: user.id,
+          note: parsed.data.note ?? null,
+          feeding_type: 'extra',
+        };
+        if (parsed.data.petId) {
+          insertPayload.pet_id = parsed.data.petId;
+        }
+
         const { data: feedData, error: feedError } = await admin
           .from('cat_feedings')
-          .insert({
-            household_id: parsed.data.householdId,
-            feeding_date: today,
-            fed_by: user.id,
-            note: parsed.data.note ?? null,
-            feeding_type: 'extra',
-          })
+          .insert(insertPayload as never)
           .select()
           .single();
 
@@ -66,6 +79,7 @@ export async function POST(request: NextRequest) {
           event_type: 'cat.extra_fed',
           entity_type: 'cat_feeding',
           entity_id: feedData.id,
+          metadata: { pet_id: parsed.data.petId ?? null },
         });
 
         void notifyExtraFed(parsed.data.householdId, user.id, parsed.data.note);

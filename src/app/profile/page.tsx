@@ -5,6 +5,7 @@ import { Bell, ChevronRight, Download, House, Settings, ShieldCheck } from 'luci
 import { createClient } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { SignOutButton } from '@/components/sign-out-button';
+import { ThemeSelectorCard } from '@/components/theme-toggle';
 
 export const metadata: Metadata = { title: 'Profile' };
 
@@ -77,6 +78,13 @@ export default async function ProfilePage() {
             <ChevronRight size={17} />
           </Link>
         )}
+      </section>
+
+      <section className="profile-section">
+        <span className="side-eyebrow">APPEARANCE</span>
+        <div style={{ marginTop: '0.5rem' }}>
+          <ThemeSelectorCard />
+        </div>
       </section>
 
       <section className="profile-section">

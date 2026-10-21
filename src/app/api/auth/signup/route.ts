@@ -22,22 +22,11 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      // If user already exists, check if unconfirmed and confirm them
       if (error.message.includes('already registered') || error.message.includes('already exists')) {
-        const { data: users } = await admin.auth.admin.listUsers();
-        const existing = users?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-        if (existing) {
-          // Confirm the existing account and update credentials
-          await admin.auth.admin.updateUserById(existing.id, {
-            password,
-            email_confirm: true,
-            user_metadata: {
-              ...(existing.user_metadata || {}),
-              display_name: typeof name === 'string' ? name.trim() : existing.user_metadata?.display_name,
-            },
-          });
-          return NextResponse.json({ success: true, message: 'Account confirmed. Signing in...' });
-        }
+        return NextResponse.json(
+          { error: 'An account with this email already exists. Please sign in instead.' },
+          { status: 409 }
+        );
       }
       return NextResponse.json({ error: error.message }, { status: 400 });
     }

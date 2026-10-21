@@ -83,7 +83,7 @@ export default async function SettlementPage({
   // 1. Fetch household expenses, payments, and categories
   let expensesQuery = supabase
     .from('expenses')
-    .select('id, amount, paid_by, expense_date, title, category_id, expense_categories(id, name, icon, is_pet)')
+    .select('id, amount, paid_by, expense_date, title, category_id, expense_categories(id, name, icon, is_pet), shares:expense_shares(user_id, share_amount)')
     .eq('household_id', household.id);
 
   let paymentsQuery = supabase
@@ -111,24 +111,38 @@ export default async function SettlementPage({
   const payments = paymentsRes.data ?? [];
   const categories = categoriesRes.data ?? [];
 
-  // 2. Simple Equal Split Calculation
+  // 2. Exact Fair Share Calculation using Expense Shares
   const totalPaise = expenses.reduce(
     (sum, row) => sum + Math.round(Number(row.amount) * 100),
     0
   );
   const memberCount = Math.max(members.length, 1);
 
-  // Equal division of the total household expenses
-  const baseSharePaise = Math.floor(totalPaise / memberCount);
-  const remainderPaise = totalPaise % memberCount;
-
-  // Distribute any remainder paise deterministically
+  // Distribute shares accurately based on participant split rules
   const memberFairShares = new Map<string, number>();
   const sortedMembers = [...members].sort((a, b) => a.user_id.localeCompare(b.user_id));
-  sortedMembers.forEach((member, index) => {
-    const extra = index < remainderPaise ? 1 : 0;
-    memberFairShares.set(member.user_id, baseSharePaise + extra);
-  });
+  sortedMembers.forEach((m) => memberFairShares.set(m.user_id, 0));
+
+  for (const exp of expenses) {
+    const shares = (exp.shares as Array<{ user_id: string; share_amount: number | string }> | null) ?? [];
+    if (shares.length > 0) {
+      for (const s of shares) {
+        const cur = memberFairShares.get(s.user_id) ?? 0;
+        memberFairShares.set(s.user_id, cur + Math.round(Number(s.share_amount) * 100));
+      }
+    } else {
+      // Deterministic fallback for legacy expenses without itemized shares
+      const expPaise = Math.round(Number(exp.amount) * 100);
+      const base = Math.floor(expPaise / memberCount);
+      const rem = expPaise % memberCount;
+      sortedMembers.forEach((m, idx) => {
+        const cur = memberFairShares.get(m.user_id) ?? 0;
+        memberFairShares.set(m.user_id, cur + base + (idx < rem ? 1 : 0));
+      });
+    }
+  }
+
+  const baseSharePaise = memberCount > 0 ? Math.floor(totalPaise / memberCount) : 0;
 
   const profileMap = new Map(profiles.map((p) => [p.id, p.display_name]));
   const upiMap = new Map(
