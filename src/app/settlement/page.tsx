@@ -11,7 +11,6 @@ import {
   Receipt,
   Scale,
   Smartphone,
-  Sparkles,
   Tags,
   TrendingDown,
   TrendingUp,

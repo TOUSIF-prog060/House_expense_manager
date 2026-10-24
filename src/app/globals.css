@@ -2,18 +2,19 @@
 @import "tailwindcss";
 
 :root {
-  --ink: #0f172a;
-  --muted: #64748b;
-  --soft: #f8fafc;
-  --paper: #ffffff;
-  --line: #e2e8f0;
-  --green: #10b981;
-  --green-light: #ecfdf5;
-  --green-ink: #047857;
-  --orange: #f59e0b;
-  --orange-light: #fef3c7;
-  --red: #ef4444;
-  --shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --ink: #19231F;
+  --muted: #6D756F;
+  --soft: #FAF8F3;
+  --paper: #FFFFFF;
+  --line: #E7E6E0;
+  --green: #103F32;
+  --green-light: #E2EBE3;
+  --green-ink: #103F32;
+  --gold: #C5A77D;
+  --orange: #D77F57;
+  --orange-light: #F2EEE5;
+  --red: #D9534F;
+  --shadow: 0 4px 20px -2px rgba(25, 35, 31, 0.05), 0 2px 6px -1px rgba(25, 35, 31, 0.03);
   --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Manrope', 'DM Sans', sans-serif;
   color-scheme: light;
@@ -21,53 +22,56 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not([data-theme="light"]) {
-    --ink: #f8fafc;
-    --muted: #94a3b8;
-    --soft: #0b0f17;
-    --paper: #131d2b;
-    --line: #223247;
-    --green: #10b981;
-    --green-light: rgba(16, 185, 129, 0.16);
-    --green-ink: #34d399;
-    --orange: #fbbf24;
-    --orange-light: rgba(251, 191, 36, 0.16);
-    --red: #f87171;
-    --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6);
+    --ink: #FAF8F3;
+    --muted: #A0ACA6;
+    --soft: #0B1411;
+    --paper: #121F1B;
+    --line: #223832;
+    --green: #246351;
+    --green-light: rgba(36, 99, 81, 0.22);
+    --green-ink: #32826C;
+    --gold: #D4B890;
+    --orange: #E8926B;
+    --orange-light: rgba(232, 146, 107, 0.18);
+    --red: #E57373;
+    --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
     color-scheme: dark;
   }
 }
 
 html.dark,
 [data-theme="dark"] {
-  --ink: #f8fafc;
-  --muted: #94a3b8;
-  --soft: #0b0f17;
-  --paper: #131d2b;
-  --line: #223247;
-  --green: #10b981;
-  --green-light: rgba(16, 185, 129, 0.16);
-  --green-ink: #34d399;
-  --orange: #fbbf24;
-  --orange-light: rgba(251, 191, 36, 0.16);
-  --red: #f87171;
-  --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6);
+  --ink: #FAF8F3;
+  --muted: #A0ACA6;
+  --soft: #0B1411;
+  --paper: #121F1B;
+  --line: #223832;
+  --green: #246351;
+  --green-light: rgba(36, 99, 81, 0.22);
+  --green-ink: #32826C;
+  --gold: #D4B890;
+  --orange: #E8926B;
+  --orange-light: rgba(232, 146, 107, 0.18);
+  --red: #E57373;
+  --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
 
 html.light,
 [data-theme="light"] {
-  --ink: #0f172a;
-  --muted: #64748b;
-  --soft: #f8fafc;
-  --paper: #ffffff;
-  --line: #e2e8f0;
-  --green: #10b981;
-  --green-light: #ecfdf5;
-  --green-ink: #047857;
-  --orange: #f59e0b;
-  --orange-light: #fef3c7;
-  --red: #ef4444;
-  --shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --ink: #19231F;
+  --muted: #6D756F;
+  --soft: #FAF8F3;
+  --paper: #FFFFFF;
+  --line: #E7E6E0;
+  --green: #103F32;
+  --green-light: #E2EBE3;
+  --green-ink: #103F32;
+  --gold: #C5A77D;
+  --orange: #D77F57;
+  --orange-light: #F2EEE5;
+  --red: #D9534F;
+  --shadow: 0 4px 20px -2px rgba(25, 35, 31, 0.05), 0 2px 6px -1px rgba(25, 35, 31, 0.03);
   color-scheme: light;
 }
 
@@ -4962,5 +4966,166 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   justify-content: center;
 }
 
+/* ============================================================================
+   Ultra-Smooth Animations & Micro-Interactions
+   ============================================================================ */
 
+:root {
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+}
 
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom Sleek Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--soft);
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+  border-radius: 999px;
+  border: 2px solid var(--soft);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 65%, transparent);
+}
+
+/* Smooth Page Entry Animation */
+.page-wrap,
+.dashboard-page,
+.cat-page,
+.settlement-page,
+.profile-page,
+.settings-page,
+.supplies-page,
+.main-content > div {
+  animation: pageSlideUp 0.38s var(--ease-smooth) both;
+}
+
+@keyframes pageSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Smooth Interactive Cards */
+.stat-card,
+.panel-card,
+.hero-card,
+.form-card,
+.expense-list-row,
+.cat-slot-card,
+.transfer-row-card,
+.category-split-card,
+.supply-card,
+.position-card,
+.quick-actions-card,
+.household-note,
+.preview-card {
+  transition: transform 0.24s var(--ease-spring), box-shadow 0.24s var(--ease-smooth), border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.stat-card:hover,
+.panel-card:hover,
+.position-card:hover,
+.quick-actions-card:hover,
+.household-note:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px -6px rgba(15, 23, 42, 0.09);
+}
+
+/* Smooth Buttons & Feedback */
+.button,
+.button-feed,
+.date-nav-btn,
+.category-pill,
+.tab-pill,
+.icon-button,
+.nav-link,
+.bottom-link {
+  transition: transform 0.18s var(--ease-spring), background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.15s ease !important;
+}
+
+.button:active,
+.button-feed:active,
+.date-nav-btn:active,
+.category-pill:active,
+.icon-button:active {
+  transform: scale(0.95) !important;
+}
+
+/* Floating Glow Effects */
+.hero-card {
+  animation: floatCard 6s ease-in-out infinite alternate;
+}
+
+@keyframes floatCard {
+  0% {
+    box-shadow: 0 15px 35px -5px rgba(5, 150, 105, 0.3);
+  }
+  100% {
+    box-shadow: 0 22px 42px -2px rgba(5, 150, 105, 0.42);
+  }
+}
+
+/* Smooth Modal Pop Animations */
+.modal-backdrop {
+  animation: backdropFade 0.22s var(--ease-smooth) both;
+}
+
+.modal-dialog,
+.modal-card {
+  animation: modalSpring 0.32s var(--ease-spring) both;
+}
+
+@keyframes backdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSpring {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Pulse Glow Keyframes */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.sparkle-one, .sparkle-two {
+  animation: pulseGlow 3s ease-in-out infinite;
+}

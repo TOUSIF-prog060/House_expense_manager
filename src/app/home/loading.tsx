@@ -1,4 +1,4 @@
-import { CalendarDays, Cat, ReceiptText, Sparkles } from 'lucide-react';
+import { Cat, ReceiptText, Sparkles } from 'lucide-react';
 
 export default function HomeLoading() {
   return (

@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
-  ExternalLink,
   History,
   Scale,
   Smartphone,

@@ -1,5 +1,3 @@
-import { ReceiptText } from 'lucide-react';
-
 export default function ExpensesLoading() {
   return (
     <div className="page-wrap expenses-page">

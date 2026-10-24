@@ -5,7 +5,6 @@ import { ArrowRight, Plus, ReceiptText, Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { formatRupees } from '@/lib/calculations/money';
-import { monthStartInTimezone } from '@/lib/dates';
 import { ExpenseDateFilter } from '@/components/expense-date-filter';
 import { HouseholdRealtimeListener } from '@/components/household-realtime-listener';
 
@@ -71,7 +70,6 @@ export default async function ExpensesPage({
   const categories = categoriesRes.data ?? [];
 
   const now = new Date();
-  const monthStart = monthStartInTimezone(now, household.timezone);
   const categoryMap = new Map(categories.map((row) => [row.id, row.name]));
   const profileMap = new Map(profiles.map((p) => [p.id, p.display_name]));
 
