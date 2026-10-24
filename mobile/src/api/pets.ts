@@ -58,8 +58,8 @@ export async function markCatFed(params: {
     p_household_id: params.householdId,
     p_meal_slot_id: params.mealSlotId,
     p_feeding_date: params.feedingDate,
-    p_pet_id: params.petId ?? null,
-    p_note: params.note?.trim() || null,
+    p_pet_id: params.petId ?? undefined,
+    p_note: params.note?.trim() || undefined,
   });
 
   // If RPC failed due to older signature without p_pet_id, retry without it
@@ -68,8 +68,8 @@ export async function markCatFed(params: {
       p_household_id: params.householdId,
       p_meal_slot_id: params.mealSlotId,
       p_feeding_date: params.feedingDate,
-      p_note: params.note?.trim() || null,
-    } as Parameters<typeof supabase.rpc<'mark_cat_fed'>>[1]);
+      p_note: params.note?.trim() || undefined,
+    });
     data = retry.data;
     error = retry.error;
   }
@@ -124,8 +124,8 @@ export async function recordExtraFeeding(params: {
   // Try the RPC first (preferred path)
   const { data, error } = await supabase.rpc('record_extra_feeding', {
     p_household_id: params.householdId,
-    p_pet_id: params.petId ?? null,
-    p_note: params.note?.trim() || null,
+    p_pet_id: params.petId ?? undefined,
+    p_note: params.note?.trim() || undefined,
   });
 
   if (error) {

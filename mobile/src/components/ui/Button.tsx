@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   TouchableOpacity,
   Text,
   ActivityIndicator,
   StyleSheet,
+  Animated,
   type StyleProp,
   type ViewStyle,
   type TextStyle,
@@ -39,6 +40,24 @@ export function Button({
   icon,
 }: ButtonProps) {
   const { colors } = useTheme();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  function handlePressIn() {
+    if (disabled || loading) return;
+    Animated.spring(scaleAnim, {
+      toValue: 0.96,
+      useNativeDriver: true,
+    }).start();
+  }
+
+  function handlePressOut() {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 5,
+      tension: 50,
+      useNativeDriver: true,
+    }).start();
+  }
 
   function handlePress() {
     if (disabled || loading) return;
@@ -84,24 +103,28 @@ export function Button({
   ];
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={handlePress}
-      disabled={disabled || loading}
-      style={buttonStyles}
-    >
-      {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' ? colors.textInverse : colors.primary}
-        />
-      ) : (
-        <>
-          {icon ? <>{icon}</> : null}
-          <Text style={textStyles}>{title}</Text>
-        </>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
+        disabled={disabled || loading}
+        style={buttonStyles}
+      >
+        {loading ? (
+          <ActivityIndicator
+            size="small"
+            color={variant === 'primary' ? colors.textInverse : colors.primary}
+          />
+        ) : (
+          <>
+            {icon ? <>{icon}</> : null}
+            <Text style={textStyles}>{title}</Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 

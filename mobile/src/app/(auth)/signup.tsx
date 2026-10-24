@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,13 +16,12 @@ import { useAuth } from '../../context/auth-context';
 import { useTheme } from '../../context/theme-context';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { radius, spacing, typography, type ColorPalette } from '../../constants/theme';
+import { radius, spacing } from '../../constants/theme';
 
 export default function SignupScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,7 +59,7 @@ export default function SignupScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? colors.background : '#FAF8F3' }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -70,22 +69,34 @@ export default function SignupScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.brandHeader}>
-            <View style={styles.logoBadge}>
-              <Ionicons name="sparkles" size={26} color={colors.primary} />
+            <View style={[styles.logoBadge, { backgroundColor: isDark ? colors.surface : '#103F32' }]}>
+              <Ionicons name="sparkles" size={26} color="#FAF8F3" />
             </View>
-            <Text style={styles.brandTitle}>Join OurHome</Text>
-            <Text style={styles.brandSubtitle}>
-              Create your profile to start sharing expenses and pet care.
+            <Text style={[styles.brandTitle, { color: isDark ? colors.text : '#19231F' }]}>
+              Join OurHome
+            </Text>
+            <Text style={[styles.brandSubtitle, { color: isDark ? colors.textSecondary : '#6D756F' }]}>
+              Create your profile to start sharing expenses, supplies, and pet care.
             </Text>
           </View>
 
-          <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Create Account</Text>
+          <View
+            style={[
+              styles.formCard,
+              {
+                backgroundColor: isDark ? colors.surface : '#FFFFFF',
+                borderColor: isDark ? colors.border : '#E7E6E0',
+              },
+            ]}
+          >
+            <Text style={[styles.formTitle, { color: isDark ? colors.text : '#19231F' }]}>
+              Create Account
+            </Text>
 
             {error ? (
-              <View style={styles.errorBox}>
+              <View style={[styles.errorBox, { backgroundColor: colors.dangerMuted }]}>
                 <Ionicons name="alert-circle" size={18} color={colors.danger} />
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
               </View>
             ) : null}
 
@@ -118,14 +129,18 @@ export default function SignupScreen() {
               onPress={handleSignup}
               loading={loading}
               size="lg"
-              style={styles.submitBtn}
+              style={[styles.submitBtn, { backgroundColor: isDark ? colors.primary : '#103F32' }]}
             />
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account?</Text>
+            <Text style={[styles.footerText, { color: isDark ? colors.textSecondary : '#6D756F' }]}>
+              Already have an account?
+            </Text>
             <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
-              <Text style={styles.signinLink}> Sign In</Text>
+              <Text style={[styles.signinLink, { color: isDark ? colors.primaryLight : '#103F32' }]}>
+                {' '}Sign In
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -134,70 +149,74 @@ export default function SignupScreen() {
   );
 }
 
-const createStyles = (colors: ColorPalette) =>
-  StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    keyboardView: {
-      flex: 1,
-    },
-    scrollContent: {
-      flexGrow: 1,
-      justifyContent: 'center',
-      padding: spacing.xl,
-    },
-    brandHeader: {
-      alignItems: 'center',
-      marginBottom: spacing.xxl,
-    },
-    logoBadge: {
-      width: 60,
-      height: 60,
-      borderRadius: radius.xl,
-      backgroundColor: colors.surfaceElevated,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: spacing.md,
-    },
-    brandTitle: {
-      ...typography.titleXl,
-      color: colors.text,
-      marginBottom: spacing.xs,
-    },
-    brandSubtitle: {
-      ...typography.bodyMd,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      maxWidth: 280,
-    },
-    formCard: {
-      backgroundColor: colors.surface,
-      borderRadius: radius.xl,
-      padding: spacing.xl,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    formTitle: {
-      ...typography.titleMd,
-      color: colors.text,
-      marginBottom: spacing.lg,
-    },
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  brandHeader: {
+    alignItems: 'flex-start',
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.xs,
+  },
+  logoBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+    shadowColor: '#103F32',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  brandTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: -1,
+    marginBottom: spacing.xs,
+  },
+  brandSubtitle: {
+    fontSize: 15,
+    lineHeight: 22,
+    maxWidth: 320,
+  },
+  formCard: {
+    borderRadius: 22,
+    padding: spacing.xl,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  formTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: spacing.lg,
+    letterSpacing: -0.3,
+  },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dangerMuted,
     padding: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.md,
     gap: spacing.sm,
   },
   errorText: {
-    ...typography.bodySm,
-    color: colors.danger,
+    fontSize: 13,
+    fontWeight: '500',
     flex: 1,
   },
   submitBtn: {
@@ -210,12 +229,10 @@ const createStyles = (colors: ColorPalette) =>
     marginTop: spacing.xxl,
   },
   footerText: {
-    ...typography.bodyMd,
-    color: colors.textSecondary,
+    fontSize: 14,
   },
   signinLink: {
-    ...typography.bodyMd,
-    color: colors.primary,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

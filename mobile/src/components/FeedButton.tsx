@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Alert,
+  Animated,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,7 +45,25 @@ export function FeedButton({
   const [feeder, setFeeder] = useState(fedByName);
   const [feedTime, setFeedTime] = useState(fedAtTime);
 
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
   const displayName = petName || 'Cat';
+
+  const animatePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.92,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const animatePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 4,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
 
   async function handleFeed() {
     if (fed || busy) return;
@@ -115,21 +134,25 @@ export function FeedButton({
   }
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      style={[styles.button, { backgroundColor: colors.primary }, busy && styles.buttonDisabled]}
-      onPress={handleFeed}
-      disabled={busy}
-    >
-      {busy ? (
-        <ActivityIndicator size="small" color={colors.textInverse} />
-      ) : (
-        <>
-          <Ionicons name="restaurant-outline" size={16} color={colors.textInverse} />
-          <Text style={[styles.buttonText, { color: colors.textInverse }]}>Feed</Text>
-        </>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPressIn={animatePressIn}
+        onPressOut={animatePressOut}
+        style={[styles.button, { backgroundColor: colors.primary }, busy && styles.buttonDisabled]}
+        onPress={handleFeed}
+        disabled={busy}
+      >
+        {busy ? (
+          <ActivityIndicator size="small" color={colors.textInverse} />
+        ) : (
+          <>
+            <Ionicons name="restaurant-outline" size={16} color={colors.textInverse} />
+            <Text style={[styles.buttonText, { color: colors.textInverse }]}>Feed</Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 

@@ -7,21 +7,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/auth-context';
 import { useTheme } from '../../context/theme-context';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { colors, radius, spacing, typography } from '../../constants/theme';
+import { radius, spacing } from '../../constants/theme';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
-  const { colors: themeColors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,7 +43,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: themeColors.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: isDark ? colors.background : '#FAF8F3' }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -53,41 +52,37 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Editorial Brand Header */}
           <View style={styles.brandHeader}>
-            <View
-              style={[
-                styles.logoBadge,
-                {
-                  backgroundColor: themeColors.surfaceElevated,
-                  borderColor: themeColors.border,
-                },
-              ]}
-            >
-              <Ionicons name="home" size={28} color={themeColors.primary} />
+            <View style={[styles.logoBadge, { backgroundColor: isDark ? colors.surface : '#103F32' }]}>
+              <Ionicons name="home" size={28} color="#FAF8F3" />
             </View>
-            <Text style={[styles.brandTitle, { color: themeColors.text }]}>
-              OurHome<Text style={{ color: themeColors.primary }}>.</Text>
+            <Text style={[styles.brandTitle, { color: isDark ? colors.text : '#19231F' }]}>
+              Shared living,{'\n'}made simple.
             </Text>
-            <Text style={[styles.brandSubtitle, { color: themeColors.textSecondary }]}>
-              Shared expenses, debt settlements & pet care in sync.
+            <Text style={[styles.brandSubtitle, { color: isDark ? colors.textSecondary : '#6D756F' }]}>
+              Track expenses, manage supplies, care for pets — all in one place.
             </Text>
           </View>
 
+          {/* Luxury Form Card */}
           <View
             style={[
               styles.formCard,
               {
-                backgroundColor: themeColors.surface,
-                borderColor: themeColors.border,
+                backgroundColor: isDark ? colors.surface : '#FFFFFF',
+                borderColor: isDark ? colors.border : '#E7E6E0',
               },
             ]}
           >
-            <Text style={[styles.formTitle, { color: themeColors.text }]}>Sign In</Text>
+            <Text style={[styles.formTitle, { color: isDark ? colors.text : '#19231F' }]}>
+              Sign In
+            </Text>
 
             {error ? (
-              <View style={styles.errorBox}>
+              <View style={[styles.errorBox, { backgroundColor: colors.dangerMuted }]}>
                 <Ionicons name="alert-circle" size={18} color={colors.danger} />
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
               </View>
             ) : null}
 
@@ -112,7 +107,9 @@ export default function LoginScreen() {
               onPress={() => router.push('/(auth)/forgot-password')}
               style={styles.forgotLink}
             >
-              <Text style={[styles.forgotText, { color: themeColors.primaryLight }]}>Forgot password?</Text>
+              <Text style={[styles.forgotText, { color: isDark ? colors.primaryLight : '#103F32' }]}>
+                Forgot password?
+              </Text>
             </TouchableOpacity>
 
             <Button
@@ -120,16 +117,18 @@ export default function LoginScreen() {
               onPress={handleLogin}
               loading={loading}
               size="lg"
-              style={styles.submitBtn}
+              style={[styles.submitBtn, { backgroundColor: isDark ? colors.primary : '#103F32' }]}
             />
           </View>
 
           <View style={styles.footer}>
-            <Text style={[styles.footerText, { color: themeColors.textSecondary }]}>
+            <Text style={[styles.footerText, { color: isDark ? colors.textSecondary : '#6D756F' }]}>
               Don't have an account yet?
             </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-              <Text style={[styles.signupLink, { color: themeColors.primary }]}> Create Account</Text>
+              <Text style={[styles.signupLink, { color: isDark ? colors.primaryLight : '#103F32' }]}>
+                {' '}Create Account
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -141,7 +140,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -152,52 +150,62 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   brandHeader: {
-    alignItems: 'center',
-    marginBottom: spacing.xxl,
+    alignItems: 'flex-start',
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.xs,
   },
   logoBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: radius.xl,
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
+    width: 56,
+    height: 56,
+    borderRadius: radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    shadowColor: '#103F32',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   brandTitle: {
-    ...typography.titleXl,
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: -1,
+    lineHeight: 38,
     marginBottom: spacing.xs,
   },
   brandSubtitle: {
-    ...typography.bodyMd,
-    textAlign: 'center',
-    maxWidth: 280,
+    fontSize: 15,
+    lineHeight: 22,
+    maxWidth: 320,
   },
   formCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
+    borderRadius: 22,
     padding: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 3,
   },
   formTitle: {
-    ...typography.titleMd,
+    fontSize: 20,
+    fontWeight: '700',
     marginBottom: spacing.lg,
+    letterSpacing: -0.3,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dangerMuted,
     padding: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.md,
     gap: spacing.sm,
   },
   errorText: {
-    ...typography.bodySm,
-    color: colors.danger,
+    fontSize: 13,
+    fontWeight: '500',
     flex: 1,
   },
   forgotLink: {
@@ -205,9 +213,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   forgotText: {
-    ...typography.bodySm,
-    color: colors.primaryLight,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
   },
   submitBtn: {
     marginTop: spacing.xs,
@@ -219,12 +226,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
   },
   footerText: {
-    ...typography.bodyMd,
-    color: colors.textSecondary,
+    fontSize: 14,
   },
   signupLink: {
-    ...typography.bodyMd,
-    color: colors.primary,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

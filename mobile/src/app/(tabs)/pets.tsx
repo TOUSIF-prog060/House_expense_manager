@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,17 +14,15 @@ import { useAuth } from '../../context/auth-context';
 import { useTheme } from '../../context/theme-context';
 import { fetchPets, fetchMealSlots, fetchFeedings } from '../../api/pets';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { FeedButton } from '../../components/FeedButton';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { radius, spacing, typography, type ColorPalette } from '../../constants/theme';
+import { radius, spacing } from '../../constants/theme';
 
 export default function PetsScreen() {
   const router = useRouter();
   const { household } = useAuth();
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const queryClient = useQueryClient();
 
   const [dateOffset, setDateOffset] = useState(0); // 0 = today, -1 = yesterday
@@ -47,7 +45,7 @@ export default function PetsScreen() {
           day: 'numeric',
         });
 
-  const { data: pets = [], isLoading: petsLoading } = useQuery({
+  const { data: pets = [] } = useQuery({
     queryKey: ['pets', household?.id],
     queryFn: () => fetchPets(household!.id),
     enabled: !!household?.id,
@@ -56,7 +54,7 @@ export default function PetsScreen() {
   const activePet =
     pets.find((p) => p.id === selectedPetId) ?? pets[0] ?? null;
 
-  const { data: mealSlots = [], isLoading: slotsLoading } = useQuery({
+  const { data: mealSlots = [] } = useQuery({
     queryKey: ['mealSlots', household?.id],
     queryFn: () => fetchMealSlots(household!.id),
     enabled: !!household?.id,
@@ -78,13 +76,13 @@ export default function PetsScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: isDark ? colors.background : '#FAF8F3' }]}
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl
           refreshing={feedingsLoading}
           onRefresh={refetch}
-          tintColor={colors.primary}
+          tintColor={isDark ? colors.primary : '#103F32'}
         />
       }
     >
@@ -96,15 +94,25 @@ export default function PetsScreen() {
             return (
               <TouchableOpacity
                 key={pet.id}
-                style={[styles.petTab, isSelected && styles.petTabActive]}
+                style={[
+                  styles.petTab,
+                  isSelected
+                    ? { backgroundColor: isDark ? colors.primary : '#103F32', borderColor: isDark ? colors.primary : '#103F32' }
+                    : { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0' },
+                ]}
                 onPress={() => setSelectedPetId(pet.id)}
               >
                 <Ionicons
                   name="paw"
-                  size={16}
-                  color={isSelected ? colors.textInverse : colors.primaryLight}
+                  size={15}
+                  color={isSelected ? '#FAF8F3' : (isDark ? colors.primaryLight : '#103F32')}
                 />
-                <Text style={[styles.petTabText, isSelected && styles.petTabTextActive]}>
+                <Text
+                  style={[
+                    styles.petTabText,
+                    isSelected ? { color: '#FAF8F3', fontWeight: '700' } : { color: isDark ? colors.text : '#19231F' },
+                  ]}
+                >
                   {pet.name}
                 </Text>
               </TouchableOpacity>
@@ -112,42 +120,48 @@ export default function PetsScreen() {
           })}
 
           <TouchableOpacity
-            style={styles.addPetBtn}
+            style={[styles.addPetBtn, { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0' }]}
             onPress={() => router.push('/modal/add-pet')}
           >
             <Ionicons name="add" size={16} color={colors.textSecondary} />
-            <Text style={styles.addPetText}>Add Cat</Text>
+            <Text style={[styles.addPetText, { color: isDark ? colors.textSecondary : '#6D756F' }]}>
+              Add Cat
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
 
       {/* Date Navigator */}
-      <View style={styles.dateNavigator}>
+      <View style={[styles.dateNavigator, { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0' }]}>
         <TouchableOpacity
           onPress={() => setDateOffset((prev) => prev - 1)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-back" size={20} color={colors.text} />
+          <Ionicons name="chevron-back" size={20} color={isDark ? colors.text : '#19231F'} />
         </TouchableOpacity>
 
         <View style={{ alignItems: 'center' }}>
-          <Text style={styles.dateTitle}>{dateLabel}</Text>
-          <Text style={styles.dateSub}>{dateKey}</Text>
+          <Text style={[styles.dateTitle, { color: isDark ? colors.text : '#19231F' }]}>
+            {dateLabel}
+          </Text>
+          <Text style={[styles.dateSub, { color: colors.textMuted }]}>{dateKey}</Text>
         </View>
 
         <TouchableOpacity
           onPress={() => setDateOffset((prev) => prev + 1)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-forward" size={20} color={colors.text} />
+          <Ionicons name="chevron-forward" size={20} color={isDark ? colors.text : '#19231F'} />
         </TouchableOpacity>
       </View>
 
       {/* Scheduled Meal Slots */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Scheduled Meals</Text>
+        <Text style={[styles.sectionTitle, { color: isDark ? colors.text : '#19231F' }]}>
+          Scheduled Meals
+        </Text>
         <TouchableOpacity
-          style={styles.treatBtn}
+          style={[styles.treatBtn, { backgroundColor: isDark ? colors.accentMuted : '#F2EEE5' }]}
           onPress={() =>
             router.push({
               pathname: '/modal/extra-feed',
@@ -155,12 +169,12 @@ export default function PetsScreen() {
             })
           }
         >
-          <Ionicons name="gift-outline" size={14} color={colors.accent} />
-          <Text style={styles.treatText}>Extra Treat</Text>
+          <Ionicons name="gift-outline" size={14} color="#D77F57" />
+          <Text style={[styles.treatText, { color: '#D77F57' }]}>Extra Treat</Text>
         </TouchableOpacity>
       </View>
 
-      <Card style={{ padding: spacing.md }}>
+      <Card style={{ padding: spacing.md, backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0', borderRadius: 20 }}>
         {mealSlots.length === 0 ? (
           <EmptyState title="No Meal Slots" message="No meal slots configured for this home." />
         ) : (
@@ -182,13 +196,17 @@ export default function PetsScreen() {
                 key={slot.id}
                 style={[
                   styles.slotRow,
-                  index < mealSlots.length - 1 && styles.borderBottom,
+                  index < mealSlots.length - 1 && { borderBottomWidth: 1, borderBottomColor: isDark ? colors.border : '#E7E6E0' },
                 ]}
               >
                 <View>
-                  <Text style={styles.slotName}>{slot.name}</Text>
+                  <Text style={[styles.slotName, { color: isDark ? colors.text : '#19231F' }]}>
+                    {slot.name}
+                  </Text>
                   {slot.reminder_time ? (
-                    <Text style={styles.slotTime}>{slot.reminder_time}</Text>
+                    <Text style={[styles.slotTime, { color: colors.textMuted }]}>
+                      {slot.reminder_time}
+                    </Text>
                   ) : null}
                 </View>
 
@@ -212,43 +230,47 @@ export default function PetsScreen() {
 
       {/* Daily Activity / Feeding Log */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Daily Log</Text>
+        <Text style={[styles.sectionTitle, { color: isDark ? colors.text : '#19231F' }]}>
+          Daily Log
+        </Text>
       </View>
 
       {petFeedings.length === 0 ? (
-        <Card style={styles.emptyCard}>
+        <Card style={[styles.emptyCard, { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0', borderRadius: 20 }]}>
           <Ionicons name="time-outline" size={32} color={colors.textMuted} />
-          <Text style={styles.emptyTitle}>No Feedings Logged Yet</Text>
-          <Text style={styles.emptyDesc}>
+          <Text style={[styles.emptyTitle, { color: isDark ? colors.text : '#19231F' }]}>
+            No Feedings Logged Yet
+          </Text>
+          <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
             Meals recorded for {dateLabel.toLowerCase()} will appear here.
           </Text>
         </Card>
       ) : (
-        <Card style={{ padding: 0 }}>
+        <Card style={{ padding: 0, backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0', borderRadius: 20 }}>
           {petFeedings.map((f, idx) => (
             <View
               key={f.id}
               style={[
                 styles.logRow,
-                idx < petFeedings.length - 1 && styles.borderBottom,
+                idx < petFeedings.length - 1 && { borderBottomWidth: 1, borderBottomColor: isDark ? colors.border : '#E7E6E0' },
               ]}
             >
               <View style={styles.logIcon}>
                 <Ionicons
                   name={f.feeding_type === 'extra' ? 'sparkles' : 'checkmark-circle'}
                   size={20}
-                  color={f.feeding_type === 'extra' ? colors.accent : colors.primary}
+                  color={f.feeding_type === 'extra' ? '#D77F57' : (isDark ? colors.primaryLight : '#103F32')}
                 />
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={styles.logTitle}>
+                <Text style={[styles.logTitle, { color: isDark ? colors.text : '#19231F' }]}>
                   {f.feeding_type === 'extra'
                     ? 'Extra meal / treat'
                     : f.meal_slot?.name || 'Scheduled meal'}
                   {f.note ? ` — "${f.note}"` : ''}
                 </Text>
-                <Text style={styles.logMeta}>
+                <Text style={[styles.logMeta, { color: colors.textMuted }]}>
                   Recorded by {f.feeder?.display_name || 'Roommate'} at{' '}
                   {new Date(f.fed_at).toLocaleTimeString([], {
                     hour: 'numeric',
@@ -269,155 +291,128 @@ export default function PetsScreen() {
   );
 }
 
-const createStyles = (colors: ColorPalette, isDark: boolean) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    content: {
-      padding: spacing.lg,
-      paddingBottom: spacing.xxxl,
-    },
-    petSelectorRow: {
-      marginBottom: spacing.md,
-    },
-    petTab: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.surfaceElevated,
-      paddingVertical: 8,
-      paddingHorizontal: 14,
-      borderRadius: radius.full,
-      borderWidth: 1,
-      borderColor: colors.border,
-      gap: 6,
-    },
-    petTabActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    petTabText: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.text,
-    },
-    petTabTextActive: {
-      color: colors.textInverse,
-    },
-    addPetBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: radius.full,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderStyle: 'dashed',
-      gap: 4,
-    },
-    addPetText: {
-      fontSize: 13,
-      color: colors.textMuted,
-    },
-    dateNavigator: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: colors.surface,
-      paddingVertical: 10,
-      paddingHorizontal: spacing.lg,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      marginBottom: spacing.lg,
-    },
-    dateTitle: {
-      ...typography.bodyLg,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    dateSub: {
-      ...typography.bodySm,
-      color: colors.textMuted,
-    },
-    sectionHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: spacing.sm,
-      marginTop: spacing.sm,
-    },
-    sectionTitle: {
-      ...typography.titleMd,
-      color: colors.text,
-    },
-    treatBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.accentMuted,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      borderRadius: radius.md,
-      gap: 4,
-    },
-    treatText: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: isDark ? colors.accentLight : colors.accent,
-    },
-    slotRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingVertical: spacing.md,
-    },
-    slotName: {
-      ...typography.bodyLg,
-      fontWeight: '600',
-      color: colors.text,
-    },
-    slotTime: {
-      ...typography.bodySm,
-      color: colors.textMuted,
-      marginTop: 2,
-    },
-    emptyCard: {
-      alignItems: 'center',
-      paddingVertical: spacing.xl,
-      gap: 4,
-    },
-    emptyTitle: {
-      ...typography.bodyLg,
-      fontWeight: '600',
-      color: colors.text,
-      marginTop: 6,
-    },
-    emptyDesc: {
-      ...typography.bodySm,
-      color: colors.textMuted,
-      textAlign: 'center',
-    },
-    logRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: spacing.md,
-    },
-    logIcon: {
-      marginRight: spacing.md,
-    },
-    logTitle: {
-      ...typography.bodyMd,
-      fontWeight: '600',
-      color: colors.text,
-    },
-    logMeta: {
-      ...typography.bodySm,
-      color: colors.textMuted,
-      marginTop: 2,
-    },
-    borderBottom: {
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-  });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxxl,
+  },
+  petSelectorRow: {
+    marginBottom: spacing.md,
+  },
+  petTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    gap: 6,
+  },
+  petTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  addPetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    gap: 4,
+  },
+  addPetText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  dateNavigator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+  },
+  dateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  dateSub: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  treatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: radius.md,
+    gap: 4,
+  },
+  treatText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  slotRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  slotName: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  slotTime: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    gap: 4,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 6,
+  },
+  emptyDesc: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  logRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  logIcon: {
+    marginRight: spacing.md,
+  },
+  logTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  logMeta: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+});

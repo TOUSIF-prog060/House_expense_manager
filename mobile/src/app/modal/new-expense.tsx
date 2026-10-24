@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  Image,
-  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,15 +24,15 @@ import { calculateShares, formatRupees, type SplitMethod, type SplitInput } from
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { radius, spacing, typography, type ColorPalette } from '../../constants/theme';
+import { radius, spacing } from '../../constants/theme';
 import { useTheme } from '../../context/theme-context';
 
 export default function NewExpenseModal() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, household, householdMembers, isAdmin } = useAuth();
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+
   const params = useLocalSearchParams<{
     editId?: string;
     initialTitle?: string;
@@ -282,25 +280,28 @@ export default function NewExpenseModal() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: isDark ? colors.background : '#FAF8F3' }]}
+      contentContainerStyle={styles.content}
+    >
       {error ? (
-        <View style={styles.errorBox}>
+        <View style={[styles.errorBox, { backgroundColor: colors.dangerMuted }]}>
           <Ionicons name="alert-circle" size={18} color={colors.danger} />
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
         </View>
       ) : null}
 
       {/* Admin Grocery Notice */}
       {isGroceries && !isAdmin ? (
-        <View style={styles.warningBox}>
+        <View style={[styles.warningBox, { backgroundColor: colors.accentMuted }]}>
           <Ionicons name="lock-closed" size={18} color={colors.accent} />
-          <Text style={styles.warningText}>
+          <Text style={[styles.warningText, { color: colors.accentLight }]}>
             Only household admins can upload or create Groceries expenses.
           </Text>
         </View>
       ) : null}
 
-      <Card style={styles.card}>
+      <Card style={[styles.card, { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0' }]}>
         <Input
           label="Expense Title"
           placeholder="e.g. WiFi Bill, Electricity, Milk..."
@@ -317,17 +318,27 @@ export default function NewExpenseModal() {
         />
 
         {/* Category Picker */}
-        <Text style={styles.fieldLabel}>Category</Text>
+        <Text style={[styles.fieldLabel, { color: isDark ? colors.textSecondary : '#6D756F' }]}>Category</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
           {categories.map((c) => {
             const isSelected = selectedCategory === c.id;
             return (
               <TouchableOpacity
                 key={c.id}
-                style={[styles.catOption, isSelected && styles.catOptionActive]}
+                style={[
+                  styles.catOption,
+                  isSelected
+                    ? { backgroundColor: isDark ? colors.primaryMuted : '#103F32', borderColor: isDark ? colors.primary : '#103F32' }
+                    : { backgroundColor: isDark ? colors.surfaceElevated : '#F2EEE5', borderColor: isDark ? colors.border : '#E7E6E0' },
+                ]}
                 onPress={() => setSelectedCategory(c.id)}
               >
-                <Text style={[styles.catOptionText, isSelected && styles.catOptionTextActive]}>
+                <Text
+                  style={[
+                    styles.catOptionText,
+                    isSelected ? { color: '#FAF8F3', fontWeight: '700' } : { color: isDark ? colors.text : '#19231F' },
+                  ]}
+                >
                   {c.name}
                 </Text>
               </TouchableOpacity>
@@ -336,7 +347,7 @@ export default function NewExpenseModal() {
         </ScrollView>
 
         {/* Paid By Selection */}
-        <Text style={[styles.fieldLabel, { marginTop: spacing.md }]}>Paid By</Text>
+        <Text style={[styles.fieldLabel, { marginTop: spacing.md, color: isDark ? colors.textSecondary : '#6D756F' }]}>Paid By</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
           {householdMembers.map((m) => {
             const isSelected = paidBy === m.user_id;
@@ -344,10 +355,20 @@ export default function NewExpenseModal() {
             return (
               <TouchableOpacity
                 key={m.user_id}
-                style={[styles.catOption, isSelected && styles.catOptionActive]}
+                style={[
+                  styles.catOption,
+                  isSelected
+                    ? { backgroundColor: isDark ? colors.primaryMuted : '#103F32', borderColor: isDark ? colors.primary : '#103F32' }
+                    : { backgroundColor: isDark ? colors.surfaceElevated : '#F2EEE5', borderColor: isDark ? colors.border : '#E7E6E0' },
+                ]}
                 onPress={() => setPaidBy(m.user_id)}
               >
-                <Text style={[styles.catOptionText, isSelected && styles.catOptionTextActive]}>
+                <Text
+                  style={[
+                    styles.catOptionText,
+                    isSelected ? { color: '#FAF8F3', fontWeight: '700' } : { color: isDark ? colors.text : '#19231F' },
+                  ]}
+                >
                   {isMe ? 'You' : m.profile?.display_name || 'Member'}
                 </Text>
               </TouchableOpacity>
@@ -374,18 +395,26 @@ export default function NewExpenseModal() {
       </Card>
 
       {/* Split Method & Participants */}
-      <Card style={[styles.card, { marginTop: spacing.md }]}>
-        <Text style={styles.cardHeaderTitle}>Split Method</Text>
-        <View style={styles.methodRow}>
+      <Card style={[styles.card, { marginTop: spacing.md, backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0' }]}>
+        <Text style={[styles.cardHeaderTitle, { color: isDark ? colors.text : '#19231F' }]}>Split Method</Text>
+        <View style={[styles.methodRow, { backgroundColor: isDark ? colors.surfaceElevated : '#F2EEE5', borderColor: isDark ? colors.border : '#E7E6E0' }]}>
           {(['equal', 'exact', 'percentage'] as SplitMethod[]).map((method) => {
             const isSelected = splitMethod === method;
             return (
               <TouchableOpacity
                 key={method}
-                style={[styles.methodBtn, isSelected && styles.methodBtnActive]}
+                style={[
+                  styles.methodBtn,
+                  isSelected && { backgroundColor: isDark ? colors.primary : '#103F32' },
+                ]}
                 onPress={() => setSplitMethod(method)}
               >
-                <Text style={[styles.methodText, isSelected && styles.methodTextActive]}>
+                <Text
+                  style={[
+                    styles.methodText,
+                    isSelected ? { color: '#FAF8F3', fontWeight: '700' } : { color: isDark ? colors.textSecondary : '#6D756F' },
+                  ]}
+                >
                   {method.charAt(0).toUpperCase() + method.slice(1)}
                 </Text>
               </TouchableOpacity>
@@ -393,7 +422,7 @@ export default function NewExpenseModal() {
           })}
         </View>
 
-        <Text style={[styles.fieldLabel, { marginTop: spacing.md }]}>
+        <Text style={[styles.fieldLabel, { marginTop: spacing.md, color: isDark ? colors.textSecondary : '#6D756F' }]}>
           Participants ({selectedUserIds.length})
         </Text>
         <View style={styles.participantsList}>
@@ -411,9 +440,9 @@ export default function NewExpenseModal() {
                   <Ionicons
                     name={isSelected ? 'checkbox' : 'square-outline'}
                     size={22}
-                    color={isSelected ? colors.primary : colors.textMuted}
+                    color={isSelected ? (isDark ? colors.primary : '#103F32') : colors.textMuted}
                   />
-                  <Text style={styles.participantName}>
+                  <Text style={[styles.participantName, { color: isDark ? colors.text : '#19231F' }]}>
                     {isMe ? 'You' : m.profile?.display_name || 'Member'}
                   </Text>
                 </TouchableOpacity>
@@ -434,7 +463,9 @@ export default function NewExpenseModal() {
                 ) : null}
 
                 {isSelected && sharePaise !== undefined ? (
-                  <Text style={styles.sharePreviewText}>{formatRupees(sharePaise)}</Text>
+                  <Text style={[styles.sharePreviewText, { color: isDark ? colors.text : '#19231F' }]}>
+                    {formatRupees(sharePaise)}
+                  </Text>
                 ) : null}
               </View>
             );
@@ -443,16 +474,16 @@ export default function NewExpenseModal() {
       </Card>
 
       {/* Receipt Attachment */}
-      <Card style={[styles.card, { marginTop: spacing.md }]}>
-        <Text style={styles.cardHeaderTitle}>Receipt Attachment</Text>
-        <Text style={styles.cardDesc}>
+      <Card style={[styles.card, { marginTop: spacing.md, backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0' }]}>
+        <Text style={[styles.cardHeaderTitle, { color: isDark ? colors.text : '#19231F' }]}>Receipt Attachment</Text>
+        <Text style={[styles.cardDesc, { color: colors.textMuted }]}>
           Attach an image or PDF of the receipt (max 10 MB, stored securely).
         </Text>
 
         {receiptFile ? (
-          <View style={styles.receiptPreview}>
-            <Ionicons name="document-text" size={24} color={colors.primary} />
-            <Text style={styles.receiptFileName} numberOfLines={1}>
+          <View style={[styles.receiptPreview, { backgroundColor: isDark ? colors.surfaceElevated : '#F2EEE5' }]}>
+            <Ionicons name="document-text" size={24} color={isDark ? colors.primary : '#103F32'} />
+            <Text style={[styles.receiptFileName, { color: isDark ? colors.text : '#19231F' }]} numberOfLines={1}>
               {receiptFile.name}
             </Text>
             <TouchableOpacity onPress={() => setReceiptFile(null)}>
@@ -465,14 +496,14 @@ export default function NewExpenseModal() {
               title="Camera / Photo"
               variant="secondary"
               size="sm"
-              icon={<Ionicons name="camera" size={16} color={colors.text} />}
+              icon={<Ionicons name="camera" size={16} color={isDark ? colors.text : '#19231F'} />}
               onPress={pickImage}
             />
             <Button
               title="Choose File (PDF)"
               variant="secondary"
               size="sm"
-              icon={<Ionicons name="attach" size={16} color={colors.text} />}
+              icon={<Ionicons name="attach" size={16} color={isDark ? colors.text : '#19231F'} />}
               onPress={pickDocument}
             />
           </View>
@@ -485,7 +516,7 @@ export default function NewExpenseModal() {
         onPress={handleSubmit}
         loading={busy}
         size="lg"
-        style={{ marginTop: spacing.lg }}
+        style={[styles.submitBtn, { backgroundColor: isDark ? colors.primary : '#103F32', marginTop: spacing.lg }]}
       />
 
       {isEditing ? (
@@ -501,34 +532,32 @@ export default function NewExpenseModal() {
   );
 }
 
-const createStyles = (colors: ColorPalette) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxxl,
   },
   card: {
-    padding: spacing.md,
+    padding: spacing.xl,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   cardHeaderTitle: {
-    ...typography.bodyLg,
+    fontSize: 16,
     fontWeight: '700',
-    color: colors.text,
     marginBottom: spacing.xs,
+    letterSpacing: -0.2,
   },
   cardDesc: {
-    ...typography.bodySm,
-    color: colors.textMuted,
+    fontSize: 12,
     marginBottom: spacing.md,
   },
   fieldLabel: {
-    ...typography.bodySm,
+    fontSize: 12,
     fontWeight: '600',
-    color: colors.textSecondary,
     marginBottom: spacing.xs,
   },
   categoryScroll: {
@@ -536,34 +565,21 @@ const createStyles = (colors: ColorPalette) =>
     marginBottom: spacing.xs,
   },
   catOption: {
-    paddingVertical: 7,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: radius.md,
-    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
-    borderColor: colors.border,
     marginRight: 8,
-  },
-  catOptionActive: {
-    backgroundColor: colors.primaryMuted,
-    borderColor: colors.primary,
   },
   catOptionText: {
     fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  catOptionTextActive: {
-    color: colors.primaryLight,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   methodRow: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceElevated,
     borderRadius: radius.md,
     padding: 3,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   methodBtn: {
     flex: 1,
@@ -571,16 +587,9 @@ const createStyles = (colors: ColorPalette) =>
     alignItems: 'center',
     borderRadius: radius.sm,
   },
-  methodBtnActive: {
-    backgroundColor: colors.primary,
-  },
   methodText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  methodTextActive: {
-    color: colors.textInverse,
   },
   participantsList: {
     marginTop: spacing.xs,
@@ -599,17 +608,15 @@ const createStyles = (colors: ColorPalette) =>
     flex: 1,
   },
   participantName: {
-    ...typography.bodyMd,
-    color: colors.text,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
   },
   customSplitInputWrapper: {
     marginHorizontal: spacing.sm,
   },
   sharePreviewText: {
-    ...typography.bodyMd,
+    fontSize: 14,
     fontWeight: '700',
-    color: colors.text,
   },
   receiptActions: {
     flexDirection: 'row',
@@ -618,42 +625,46 @@ const createStyles = (colors: ColorPalette) =>
   receiptPreview: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
     padding: spacing.md,
     borderRadius: radius.md,
     gap: spacing.sm,
   },
   receiptFileName: {
-    ...typography.bodySm,
-    color: colors.text,
+    fontSize: 13,
+    fontWeight: '500',
     flex: 1,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dangerMuted,
     padding: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.md,
     gap: spacing.sm,
   },
   errorText: {
-    ...typography.bodySm,
-    color: colors.danger,
+    fontSize: 13,
+    fontWeight: '500',
     flex: 1,
   },
   warningBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.accentMuted,
     padding: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.md,
     gap: spacing.sm,
   },
   warningText: {
-    ...typography.bodySm,
-    color: colors.accentLight,
+    fontSize: 13,
+    fontWeight: '500',
     flex: 1,
+  },
+  submitBtn: {
+    shadowColor: '#103F32',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });

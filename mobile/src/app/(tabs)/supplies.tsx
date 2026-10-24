@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -30,13 +30,12 @@ import {
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { radius, spacing, typography, type ColorPalette } from '../../constants/theme';
+import { radius, spacing } from '../../constants/theme';
 
 export default function SuppliesScreen() {
   const router = useRouter();
   const { user, household } = useAuth();
   const { colors, isDark } = useTheme();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const queryClient = useQueryClient();
 
   const [inputVal, setInputVal] = useState('');
@@ -123,12 +122,12 @@ export default function SuppliesScreen() {
   const pendingCount = supplies.filter((s) => !s.is_purchased).length;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: isDark ? colors.background : '#FAF8F3' }]}>
       {/* Quick Input Bar */}
-      <View style={styles.inputContainer}>
-        <View style={styles.inputWrapper}>
+      <View style={[styles.inputContainer, { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0' }]}>
+        <View style={[styles.inputWrapper, { backgroundColor: isDark ? colors.surfaceElevated : '#F2EEE5', borderColor: isDark ? colors.border : '#E7E6E0' }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: isDark ? colors.text : '#19231F' }]}
             placeholder="e.g. Milk 2L, Onions 1kg, Soap 3..."
             placeholderTextColor={colors.textMuted}
             value={inputVal}
@@ -137,29 +136,29 @@ export default function SuppliesScreen() {
             returnKeyType="done"
           />
           <TouchableOpacity
-            style={[styles.addBtn, !inputVal.trim() && { opacity: 0.5 }]}
+            style={[styles.addBtn, { backgroundColor: isDark ? colors.primary : '#103F32' }, !inputVal.trim() && { opacity: 0.5 }]}
             onPress={handleQuickAdd}
             disabled={!inputVal.trim() || addMutation.isPending}
           >
-            <Ionicons name="arrow-up" size={18} color={colors.textInverse} />
+            <Ionicons name="arrow-up" size={18} color="#FAF8F3" />
           </TouchableOpacity>
         </View>
 
         {/* Supermarket Shopping Mode Button */}
         <TouchableOpacity
-          style={styles.shoppingModeBtn}
+          style={[styles.shoppingModeBtn, { backgroundColor: isDark ? colors.primaryMuted : '#E2EBE3' }]}
           onPress={() => router.push('/modal/shopping-mode')}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
         >
-          <Ionicons name="cart" size={16} color={colors.primary} />
-          <Text style={styles.shoppingModeText}>
+          <Ionicons name="cart" size={16} color={isDark ? colors.primaryLight : '#103F32'} />
+          <Text style={[styles.shoppingModeText, { color: isDark ? colors.primaryLight : '#103F32' }]}>
             Shopping Mode ({pendingCount})
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Category Chips Scroll */}
-      <View style={styles.categoriesBar}>
+      <View style={[styles.categoriesBar, { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0' }]}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -173,10 +172,20 @@ export default function SuppliesScreen() {
 
             return (
               <TouchableOpacity
-                style={[styles.catChip, isSelected && styles.catChipActive]}
+                style={[
+                  styles.catChip,
+                  isSelected
+                    ? { backgroundColor: isDark ? colors.primaryMuted : '#103F32', borderColor: isDark ? colors.primary : '#103F32' }
+                    : { backgroundColor: isDark ? colors.surfaceElevated : '#F2EEE5', borderColor: isDark ? colors.border : '#E7E6E0' },
+                ]}
                 onPress={() => setSelectedCat(item.name === 'All' ? 'all' : item.name)}
               >
-                <Text style={[styles.catChipText, isSelected && styles.catChipTextActive]}>
+                <Text
+                  style={[
+                    styles.catChipText,
+                    isSelected ? { color: '#FAF8F3', fontWeight: '700' } : { color: isDark ? colors.text : '#19231F' },
+                  ]}
+                >
                   {item.name === 'All'
                     ? 'All'
                     : `${(item as { emoji?: string }).emoji || ''} ${item.name}`}
@@ -228,7 +237,7 @@ export default function SuppliesScreen() {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={refetch}
-            tintColor={colors.primary}
+            tintColor={isDark ? colors.primary : '#103F32'}
           />
         }
         ListEmptyComponent={
@@ -248,7 +257,8 @@ export default function SuppliesScreen() {
           <Card
             style={[
               styles.supplyCard,
-              item.is_purchased && { opacity: 0.65, backgroundColor: colors.surfaceElevated },
+              { backgroundColor: isDark ? colors.surface : '#FFFFFF', borderColor: isDark ? colors.border : '#E7E6E0' },
+              item.is_purchased && { opacity: 0.65, backgroundColor: isDark ? colors.surfaceElevated : '#F2EEE5' },
             ]}
           >
             <TouchableOpacity
@@ -257,9 +267,9 @@ export default function SuppliesScreen() {
               activeOpacity={0.6}
             >
               {item.is_purchased ? (
-                <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
+                <Ionicons name="checkmark-circle" size={24} color={isDark ? colors.primaryLight : '#103F32'} />
               ) : (
-                <View style={styles.emptyCircle} />
+                <View style={[styles.emptyCircle, { borderColor: colors.borderLight }]} />
               )}
             </TouchableOpacity>
 
@@ -267,12 +277,13 @@ export default function SuppliesScreen() {
               <Text
                 style={[
                   styles.itemName,
+                  { color: isDark ? colors.text : '#19231F' },
                   item.is_purchased && { textDecorationLine: 'line-through', color: colors.textMuted },
                 ]}
               >
                 {item.name}
               </Text>
-              <Text style={styles.itemMeta}>
+              <Text style={[styles.itemMeta, { color: colors.textMuted }]}>
                 {item.category}
                 {item.adder?.display_name ? ` · Added by ${item.adder.display_name}` : ''}
                 {item.is_purchased && item.buyer?.display_name
@@ -286,7 +297,7 @@ export default function SuppliesScreen() {
 
               {item.is_purchased ? (
                 <TouchableOpacity
-                  style={styles.convertBtn}
+                  style={[styles.convertBtn, { backgroundColor: isDark ? colors.primaryMuted : '#E2EBE3' }]}
                   onPress={() =>
                     router.push({
                       pathname: '/modal/new-expense',
@@ -297,8 +308,10 @@ export default function SuppliesScreen() {
                     })
                   }
                 >
-                  <Ionicons name="receipt-outline" size={13} color={colors.primary} />
-                  <Text style={styles.convertText}>Split bill</Text>
+                  <Ionicons name="receipt-outline" size={13} color={isDark ? colors.primaryLight : '#103F32'} />
+                  <Text style={[styles.convertText, { color: isDark ? colors.primaryLight : '#103F32' }]}>
+                    Split bill
+                  </Text>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
@@ -316,148 +329,120 @@ export default function SuppliesScreen() {
   );
 }
 
-const createStyles = (colors: ColorPalette, isDark: boolean) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    inputContainer: {
-      backgroundColor: colors.surface,
-      padding: spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      gap: spacing.sm,
-    },
-    inputWrapper: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.surfaceElevated,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: spacing.md,
-    },
-    input: {
-      flex: 1,
-      paddingVertical: 12,
-      color: colors.text,
-      fontSize: 15,
-    },
-    addBtn: {
-      width: 32,
-      height: 32,
-      borderRadius: radius.md,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    shoppingModeBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.primaryMuted,
-      paddingVertical: 9,
-      borderRadius: radius.md,
-      gap: 6,
-    },
-    shoppingModeText: {
-      color: isDark ? colors.primaryLight : colors.primaryDark,
-      fontWeight: '700',
-      fontSize: 13,
-    },
-    categoriesBar: {
-      paddingVertical: spacing.sm,
-      backgroundColor: colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    catChip: {
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      borderRadius: radius.full,
-      backgroundColor: colors.surfaceElevated,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    catChipActive: {
-      backgroundColor: colors.primaryMuted,
-      borderColor: colors.primary,
-    },
-    catChipText: {
-      fontSize: 13,
-      color: colors.textMuted,
-      fontWeight: '500',
-    },
-    catChipTextActive: {
-      color: isDark ? colors.primaryLight : colors.primaryDark,
-      fontWeight: '700',
-    },
-    statusRow: {
-      flexDirection: 'row',
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm,
-      gap: spacing.sm,
-    },
-    statusBtn: {
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-      borderRadius: radius.md,
-    },
-    statusBtnActive: {
-      backgroundColor: colors.surfaceElevated,
-    },
-    statusText: {
-      fontSize: 13,
-      color: colors.textMuted,
-      fontWeight: '500',
-    },
-    statusTextActive: {
-      color: colors.text,
-      fontWeight: '600',
-    },
-    listContent: {
-      padding: spacing.lg,
-      gap: spacing.sm,
-      paddingBottom: spacing.xxxl,
-    },
-    supplyCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: spacing.md,
-    },
-    checkCircle: {
-      marginRight: spacing.md,
-    },
-    emptyCircle: {
-      width: 24,
-      height: 24,
-      borderRadius: radius.full,
-      borderWidth: 2,
-      borderColor: colors.borderLight,
-    },
-    itemName: {
-      ...typography.bodyLg,
-      fontWeight: '600',
-      color: colors.text,
-    },
-    itemMeta: {
-      ...typography.bodySm,
-      color: colors.textMuted,
-      marginTop: 2,
-    },
-    convertBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.primaryMuted,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: radius.sm,
-      gap: 4,
-    },
-    convertText: {
-      fontSize: 11,
-      color: isDark ? colors.primaryLight : colors.primaryDark,
-      fontWeight: '600',
-    },
-  });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  inputContainer: {
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    gap: spacing.sm,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 15,
+  },
+  addBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shoppingModeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    gap: 6,
+  },
+  shoppingModeText: {
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  categoriesBar: {
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  catChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: radius.full,
+    borderWidth: 1,
+  },
+  catChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  statusBtn: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: radius.md,
+  },
+  statusBtnActive: {
+    backgroundColor: '#F2EEE5',
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statusTextActive: {
+    fontWeight: '800',
+  },
+  listContent: {
+    padding: spacing.lg,
+    gap: spacing.sm,
+    paddingBottom: spacing.xxxl,
+  },
+  supplyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  checkCircle: {
+    marginRight: spacing.md,
+  },
+  emptyCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    borderWidth: 2,
+  },
+  itemName: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  itemMeta: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  convertBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    gap: 4,
+  },
+  convertText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+});

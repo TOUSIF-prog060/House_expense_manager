@@ -1,79 +1,91 @@
-export const darkColors = {
-  background: '#121316',
-  surface: '#1a1c22',
-  surfaceElevated: '#242731',
-  border: '#2c303c',
-  borderLight: '#383d4c',
+export const lightColors = {
+  background: '#FAF8F3', // Warm Ivory
+  surface: '#FFFFFF', // Pure White
+  surfaceElevated: '#F2EEE5', // Cream Surface
+  border: '#E7E6E0', // Subtle Border
+  borderLight: '#F2EEE5',
 
-  primary: '#10b981', // Emerald
-  primaryLight: '#34d399',
-  primaryDark: '#059669',
-  primaryMuted: 'rgba(16, 185, 129, 0.15)',
+  primary: '#103F32', // Primary Forest Green
+  primaryLight: '#235D4B',
+  primaryDark: '#092E25', // Deep Forest
+  primaryMuted: '#E2EBE3', // Soft Sage
 
-  accent: '#f59e0b', // Amber
-  accentLight: '#fbbf24',
-  accentMuted: 'rgba(245, 158, 11, 0.15)',
+  accent: '#D77F57', // Warm Terracotta Accent
+  accentLight: '#E8A382',
+  accentMuted: 'rgba(215, 127, 87, 0.15)',
 
-  rose: '#f43f5e',
-  roseMuted: 'rgba(244, 63, 94, 0.15)',
+  gold: '#C5A77D', // Champagne Gold
+  goldMuted: 'rgba(197, 167, 125, 0.18)',
 
-  indigo: '#6366f1',
-  indigoMuted: 'rgba(99, 102, 241, 0.15)',
+  sage: '#E2EBE3', // Soft Sage
+  terracotta: '#D77F57',
 
-  cyan: '#06b6d4',
-  cyanMuted: 'rgba(6, 182, 212, 0.15)',
+  rose: '#D9534F',
+  roseMuted: 'rgba(217, 83, 79, 0.12)',
 
-  text: '#f3f4f6',
-  textSecondary: '#9ca3af',
-  textMuted: '#6b7280',
-  textInverse: '#121316',
+  indigo: '#4A6B82',
+  indigoMuted: 'rgba(74, 107, 130, 0.12)',
 
-  danger: '#ef4444',
-  dangerMuted: 'rgba(239, 68, 68, 0.15)',
-  success: '#10b981',
-  warning: '#f59e0b',
+  cyan: '#2A8C82',
+  cyanMuted: 'rgba(42, 140, 130, 0.12)',
+
+  text: '#19231F', // Primary Dark Charcoal Text
+  textSecondary: '#6D756F', // Muted Secondary Text
+  textMuted: '#9DA39E',
+  textInverse: '#FFFFFF',
+
+  danger: '#D9534F',
+  dangerMuted: 'rgba(217, 83, 79, 0.12)',
+  success: '#103F32',
+  warning: '#D77F57',
 };
 
-export const lightColors: typeof darkColors = {
-  background: '#f8fafc',
-  surface: '#ffffff',
-  surfaceElevated: '#f1f5f9',
-  border: '#e2e8f0',
-  borderLight: '#cbd5e1',
+export const darkColors: typeof lightColors = {
+  background: '#0B1411', // Dark Forest Background
+  surface: '#121F1B', // Dark Surface
+  surfaceElevated: '#1A2C27',
+  border: '#223832',
+  borderLight: '#2B463E',
 
-  primary: '#10b981', // Emerald
-  primaryLight: '#34d399',
-  primaryDark: '#047857',
-  primaryMuted: 'rgba(16, 185, 129, 0.12)',
+  primary: '#246351', // Bright Forest Accent
+  primaryLight: '#32826C',
+  primaryDark: '#092E25',
+  primaryMuted: 'rgba(36, 99, 81, 0.25)',
 
-  accent: '#f59e0b', // Amber
-  accentLight: '#fbbf24',
-  accentMuted: 'rgba(245, 158, 11, 0.12)',
+  accent: '#E8926B', // Terracotta Warmth
+  accentLight: '#F2A988',
+  accentMuted: 'rgba(232, 146, 107, 0.2)',
 
-  rose: '#f43f5e',
-  roseMuted: 'rgba(244, 63, 94, 0.12)',
+  gold: '#D4B890', // Champagne Gold Dark
+  goldMuted: 'rgba(212, 184, 144, 0.2)',
 
-  indigo: '#6366f1',
-  indigoMuted: 'rgba(99, 102, 241, 0.12)',
+  sage: '#223832',
+  terracotta: '#E8926B',
 
-  cyan: '#06b6d4',
-  cyanMuted: 'rgba(6, 182, 212, 0.12)',
+  rose: '#E57373',
+  roseMuted: 'rgba(229, 115, 115, 0.2)',
 
-  text: '#0f172a',
-  textSecondary: '#475569',
-  textMuted: '#64748b',
-  textInverse: '#ffffff',
+  indigo: '#78A1BB',
+  indigoMuted: 'rgba(120, 161, 187, 0.2)',
 
-  danger: '#ef4444',
-  dangerMuted: 'rgba(239, 68, 68, 0.12)',
-  success: '#10b981',
-  warning: '#f59e0b',
+  cyan: '#4DB6AC',
+  cyanMuted: 'rgba(77, 182, 172, 0.2)',
+
+  text: '#FAF8F3', // Warm Ivory Text
+  textSecondary: '#A0ACA6',
+  textMuted: '#6D7873',
+  textInverse: '#FAF8F3',
+
+  danger: '#E57373',
+  dangerMuted: 'rgba(229, 115, 115, 0.2)',
+  success: '#32826C',
+  warning: '#E8926B',
 };
 
-export type ColorPalette = typeof darkColors;
+export type ColorPalette = typeof lightColors;
 
-// Default exported colors (preserves backward compatibility)
-export const colors = darkColors;
+// Default exported colors
+export const colors = lightColors;
 
 export const spacing = {
   xs: 4,
@@ -86,20 +98,20 @@ export const spacing = {
 };
 
 export const radius = {
-  sm: 6,
-  md: 10,
-  lg: 14,
-  xl: 18,
+  sm: 8,
+  md: 12,
+  lg: 18,
+  xl: 24,
   full: 9999,
 };
 
 export const typography = {
-  fontFamily: undefined, // Default system font
-  titleXl: { fontSize: 28, fontWeight: '700' as const, letterSpacing: -0.5 },
-  titleLg: { fontSize: 22, fontWeight: '700' as const, letterSpacing: -0.3 },
-  titleMd: { fontSize: 18, fontWeight: '600' as const },
+  fontFamily: undefined, // System font
+  titleXl: { fontSize: 30, fontWeight: '800' as const, letterSpacing: -0.8 },
+  titleLg: { fontSize: 24, fontWeight: '700' as const, letterSpacing: -0.5 },
+  titleMd: { fontSize: 19, fontWeight: '600' as const, letterSpacing: -0.2 },
   bodyLg: { fontSize: 16, fontWeight: '400' as const },
   bodyMd: { fontSize: 14, fontWeight: '400' as const },
   bodySm: { fontSize: 12, fontWeight: '400' as const },
-  caption: { fontSize: 11, fontWeight: '500' as const, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  caption: { fontSize: 11, fontWeight: '600' as const, textTransform: 'uppercase' as const, letterSpacing: 0.8 },
 };
