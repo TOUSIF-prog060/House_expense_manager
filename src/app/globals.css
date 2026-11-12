@@ -4,16 +4,25 @@
 :root {
   --ink: #0f172a;
   --muted: #64748b;
-  --soft: #f8fafc;
-  --paper: #ffffff;
-  --line: #e2e8f0;
+  --soft: rgba(255, 255, 255, 0.42);
+  --paper: rgba(255, 255, 255, 0.62);
+  --paper-solid: #ffffff;
+  --line: rgba(15, 23, 42, 0.08);
   --green: #10b981;
-  --green-light: #ecfdf5;
+  --green-light: rgba(16, 185, 129, 0.13);
   --green-ink: #047857;
   --orange: #f59e0b;
-  --orange-light: #fef3c7;
+  --orange-light: rgba(245, 158, 11, 0.16);
   --red: #ef4444;
-  --shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --shadow: 0 8px 32px -6px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.72);
+  --glass-blur: blur(22px) saturate(170%);
+  --page-base: #eef4f1;
+  --page-mesh:
+    radial-gradient(42vw 42vw at 8% 12%, rgba(16, 185, 129, 0.30), transparent 70%),
+    radial-gradient(38vw 38vw at 92% 8%, rgba(56, 189, 248, 0.24), transparent 70%),
+    radial-gradient(36vw 36vw at 78% 88%, rgba(245, 158, 11, 0.20), transparent 70%),
+    radial-gradient(40vw 40vw at 18% 92%, rgba(167, 139, 250, 0.20), transparent 70%);
   --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Manrope', 'DM Sans', sans-serif;
   color-scheme: light;
@@ -23,16 +32,24 @@
   :root {
     --ink: #f8fafc;
     --muted: #94a3b8;
-    --soft: #0b0f17;
-    --paper: #131d2b;
-    --line: #223247;
+    --soft: rgba(255, 255, 255, 0.04);
+    --paper: rgba(22, 32, 48, 0.55);
+    --paper-solid: #131d2b;
+    --line: rgba(255, 255, 255, 0.08);
     --green: #10b981;
     --green-light: rgba(16, 185, 129, 0.16);
     --green-ink: #34d399;
     --orange: #fbbf24;
     --orange-light: rgba(251, 191, 36, 0.16);
     --red: #f87171;
-    --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6);
+    --shadow: 0 12px 36px -6px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(255, 255, 255, 0.10);
+    --page-base: #070b12;
+    --page-mesh:
+      radial-gradient(42vw 42vw at 8% 12%, rgba(16, 185, 129, 0.22), transparent 70%),
+      radial-gradient(38vw 38vw at 92% 8%, rgba(56, 189, 248, 0.14), transparent 70%),
+      radial-gradient(36vw 36vw at 78% 88%, rgba(245, 158, 11, 0.10), transparent 70%),
+      radial-gradient(40vw 40vw at 18% 92%, rgba(139, 92, 246, 0.16), transparent 70%);
     color-scheme: dark;
   }
 }
@@ -1961,7 +1978,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .tab-pill-active {
   background: var(--ink);
-  color: var(--paper) !important;
+  color: var(--paper-solid) !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -3658,7 +3675,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   color: var(--orange);
 }
 
-.preview-cat div, .preview-receipt div {
+.preview-cat > div + div, .preview-receipt > div + div {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -4880,6 +4897,181 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .auto-cat-note {
   font-size: 0.78rem;
   color: var(--muted);
+}
+
+/* === Glassmorphism Layer === */
+/* Surfaces use the translucent --paper/--soft tokens; this layer adds the
+   colored backdrop they sit on plus blur and light edges. Only top-level
+   surfaces get backdrop-filter: repeated rows/cards stay translucent without
+   blur to keep scrolling cheap on low-end phones. */
+html, body {
+  background-color: var(--page-base);
+  background-image: var(--page-mesh);
+  background-attachment: fixed;
+}
+
+.app-frame,
+.auth-page,
+.auth-aside,
+.welcome-page {
+  background: transparent;
+}
+
+.form-card, .panel-card, .settings-card,
+.stat-card,
+.expense-list,
+.list-empty,
+.date-pill,
+.position-card, .quick-actions-card, .household-note,
+.cat-today-panel,
+.recent-feedings, .notification-list,
+.detail-share-list,
+.receipt-link,
+.settlement-tabs,
+.split-equation-card,
+.status-banner-settled,
+.simple-guide-card,
+.profile-card,
+.preview-card,
+.onboarding-card,
+.expense-filter-toolbar,
+.quick-add-input-wrap,
+.supplies-search-wrap,
+.supplies-empty-state,
+.install-banner {
+  border-color: var(--glass-border);
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.supply-card,
+.cat-slot-card,
+.pet-meal-row,
+.category-split-card,
+.upi-member-card,
+.transfer-row-card,
+.history-date-group .history-row,
+.button-secondary,
+.segmented,
+.category-pill {
+  border-color: var(--glass-border);
+}
+
+/* Chrome: header and mobile tab bar float over scrolling content */
+.topbar {
+  background: color-mix(in srgb, var(--paper-solid) 55%, transparent);
+  border-bottom-color: var(--glass-border);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+.side-nav {
+  border-right-color: var(--glass-border);
+}
+
+.nav-link.active {
+  background: var(--paper);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 860px) {
+  .bottom-nav {
+    left: 12px;
+    right: 12px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    padding: 4px 6px;
+    border: 1px solid var(--glass-border);
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--paper-solid) 58%, transparent);
+    box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+
+  .main-content {
+    padding-bottom: 110px;
+  }
+}
+
+/* Hero cards: tinted emerald glass with a soft top sheen */
+.hero-card,
+.detail-total-card {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.16) 0%, transparent 45%),
+    linear-gradient(135deg, rgba(6, 78, 59, 0.90) 0%, rgba(4, 120, 87, 0.80) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 18px 40px -10px rgba(5, 150, 105, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.stat-highlight {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.92), rgba(5, 150, 105, 0.82));
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.button-primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 6px 18px -4px rgba(16, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Fields: frosted wells inside glass cards */
+.field input:not([type=checkbox]):not([type=file]),
+.field select,
+.field textarea,
+.amount-input {
+  border-color: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+  background: var(--paper);
+}
+
+/* Auth: form sits on its own glass card over the mesh */
+.auth-aside {
+  border-right-color: var(--glass-border);
+}
+
+.auth-panel {
+  width: min(460px, calc(100% - 32px));
+  padding: 40px 36px;
+  background: var(--paper);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+/* Overlays */
+.modal-backdrop {
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.modal-card,
+.modal-dialog {
+  background: color-mix(in srgb, var(--paper-solid) 78%, transparent);
+  border-color: var(--glass-border);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+}
+
+/* Fallbacks: no blur support, or the user asked for less transparency */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --paper: color-mix(in srgb, var(--paper-solid) 92%, transparent);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --paper: var(--paper-solid);
+    --soft: color-mix(in srgb, var(--paper-solid) 94%, var(--ink));
+  }
 }
 
 
