@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendHouseholdPushNotification } from '@/lib/notifications/push-service';
 
@@ -9,7 +9,7 @@ const schema = z.object({ householdId: z.string().uuid(), note: z.string().max(5
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
     const parsed = schema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: 'Invalid feeding.' }, { status: 400 });

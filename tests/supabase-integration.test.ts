@@ -9,6 +9,7 @@ const { getUser, rpc, from } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
+  getCurrentUser: async () => (await getUser()).data.user,
   createClient: async () => ({
     auth: { getUser },
     rpc,

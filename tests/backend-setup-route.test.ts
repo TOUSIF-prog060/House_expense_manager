@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { getUser, initialize } = vi.hoisted(() => ({ getUser: vi.fn(), initialize: vi.fn() }));
-vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser } }) }));
+vi.mock('@/lib/supabase/server', () => ({ getCurrentUser: async () => (await getUser()).data.user, createClient: async () => ({ auth: { getUser } }) }));
 vi.mock('@/lib/backend/google-sheets', () => ({ getStore: () => ({ initialize }) }));
 
 import { POST } from '../src/app/api/backend/setup/route';

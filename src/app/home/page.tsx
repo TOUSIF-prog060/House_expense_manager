@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, CalendarDays, Cat, Check, Plus, ReceiptText, Sparkles } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import { formatRupees } from '@/lib/calculations/money';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { dateKeyInTimezone, hourInTimezone, monthStartInTimezone } from '@/lib/dates';
@@ -26,7 +26,7 @@ export default async function HomePage() {
     redirect('/login');
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const householdData = await getHouseholdForUser(user.id);

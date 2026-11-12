@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowRight, Plus, ReceiptText, Search } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { formatRupees } from '@/lib/calculations/money';
 import { monthStartInTimezone } from '@/lib/dates';
@@ -18,13 +18,7 @@ export default async function ExpensesPage({
 }) {
   const { date: paramDate } = await searchParams;
 
-  let auth;
-  try {
-    auth = await createClient();
-  } catch {
-    redirect('/login');
-  }
-  const { data: { user } } = await auth.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const householdData = await getHouseholdForUser(user.id);

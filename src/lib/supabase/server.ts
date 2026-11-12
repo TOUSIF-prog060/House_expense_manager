@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import type { Database } from './database.types';
 
 function getSupabaseConfig() {
@@ -25,3 +26,23 @@ export async function createClient() {
     },
   });
 }
+
+/**
+ * Signed-in user for this request, verified from the session JWT.
+ * The project signs JWTs with an asymmetric key, so getClaims() checks the
+ * signature locally against cached JWKS instead of calling the Auth server
+ * like getUser() does. Deduplicated per request. Returns null when signed
+ * out or when Supabase is not configured.
+ */
+export const getCurrentUser = cache(async () => {
+  let supabase;
+  try {
+    supabase = await createClient();
+  } catch {
+    return null;
+  }
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
+  return { id: claims.sub, email: typeof claims.email === 'string' ? claims.email : undefined };
+});

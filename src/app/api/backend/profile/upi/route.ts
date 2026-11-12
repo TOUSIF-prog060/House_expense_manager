@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 // UPI format: e.g. name@bank, phone@paytm, user.name@okhdfcbank
@@ -8,12 +8,9 @@ const UPI_REGEX = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z0-9]{2,64}$/;
 export async function POST(request: NextRequest) {
   try {
     const auth = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await auth.auth.getUser();
+    const user = await getCurrentUser();
 
-    if (!user || authError) {
+    if (!user) {
       return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
     }
 

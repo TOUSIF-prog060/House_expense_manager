@@ -1,19 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { EditExpenseForm } from '@/components/edit-expense-form';
 
 export const metadata: Metadata = { title: 'Edit expense' };
 
 export default async function EditExpensePage({ params }: { params: Promise<{ id: string }> }) {
-  let auth;
-  try {
-    auth = await createClient();
-  } catch {
-    redirect('/login');
-  }
-  const { data: { user } } = await auth.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const { id } = await params;

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { HouseholdSettingsForm } from '@/components/household-settings-form';
 import { HouseholdRealtimeListener } from '@/components/household-realtime-listener';
@@ -10,13 +10,7 @@ import { HouseholdRealtimeListener } from '@/components/household-realtime-liste
 export const metadata: Metadata = { title: 'Household settings' };
 
 export default async function HouseholdSettingsPage() {
-  let auth;
-  try {
-    auth = await createClient();
-  } catch {
-    redirect('/login');
-  }
-  const { data: { user } } = await auth.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const householdData = await getHouseholdForUser(user.id);

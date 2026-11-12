@@ -2,20 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Bell, ChevronRight, Download, House, Settings, ShieldCheck } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { SignOutButton } from '@/components/sign-out-button';
 
 export const metadata: Metadata = { title: 'Profile' };
 
 export default async function ProfilePage() {
-  let auth;
-  try {
-    auth = await createClient();
-  } catch {
-    redirect('/login');
-  }
-  const { data: { user } } = await auth.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const { supabase, membership, household, profiles } = await getHouseholdForUser(user.id);

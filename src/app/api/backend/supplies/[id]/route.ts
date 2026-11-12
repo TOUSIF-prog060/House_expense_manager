@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import type { Database } from '@/lib/supabase/database.types';
 import { autoCategorizeSupplyItem } from '@/lib/supplies/categories';
 
@@ -11,7 +11,7 @@ export async function PATCH(
 ) {
   try {
     const auth = await createClient();
-    const { data: { user } } = await auth.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
 
     const { id } = await context.params;
@@ -105,7 +105,7 @@ export async function DELETE(
 ) {
   try {
     const auth = await createClient();
-    const { data: { user } } = await auth.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
 
     const { id } = await context.params;

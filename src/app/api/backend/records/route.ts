@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { getStore } from '@/lib/backend/supabase-store';
 import type { SheetRow, SheetTable } from '@/lib/backend/sheet-schema';
 
@@ -7,8 +7,7 @@ const tables = new Set<SheetTable>(['profiles', 'households', 'household_members
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = await createClient();
-    const { data: { user } } = await auth.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
     const table = request.nextUrl.searchParams.get('table') as SheetTable | null;
     const householdId = request.nextUrl.searchParams.get('householdId');

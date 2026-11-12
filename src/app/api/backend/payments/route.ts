@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { paymentSchema } from '@/lib/validation/schemas';
 import { sendPushNotification } from '@/lib/notifications/push-service';
@@ -7,7 +7,7 @@ import { sendPushNotification } from '@/lib/notifications/push-service';
 export async function POST(request: NextRequest) {
   try {
     const auth = await createClient();
-    const { data: { user } } = await auth.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
 
     const parsed = paymentSchema.safeParse(await request.json());

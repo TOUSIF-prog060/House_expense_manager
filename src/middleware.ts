@@ -19,7 +19,10 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // getClaims() refreshes an expired session (writing cookies via setAll) and
+  // verifies the JWT locally, avoiding an Auth server round trip per request.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? data.claims : null;
   const pathname = request.nextUrl.pathname;
 
   const isAuthRoute = ['/login', '/signup', '/forgot-password'].includes(pathname);

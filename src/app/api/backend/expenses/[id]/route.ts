@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 
 const schema = z.object({
   title: z.string().trim().min(1).max(120),
@@ -16,7 +16,7 @@ const schema = z.object({
 export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const auth = await createClient();
-    const { data: { user } } = await auth.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
 
     const parsed = schema.safeParse(await request.json());
@@ -115,7 +115,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 export async function DELETE(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const auth = await createClient();
-    const { data: { user } } = await auth.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
 
     const { id } = await context.params;

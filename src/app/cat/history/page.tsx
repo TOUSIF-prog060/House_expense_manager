@@ -2,20 +2,14 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Clock3, PawPrint } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { HouseholdRealtimeListener } from '@/components/household-realtime-listener';
 
 export const metadata: Metadata = { title: 'Feeding history' };
 
 export default async function CatHistoryPage() {
-  let auth;
-  try {
-    auth = await createClient();
-  } catch {
-    redirect('/login');
-  }
-  const { data: { user } } = await auth.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const householdData = await getHouseholdForUser(user.id);

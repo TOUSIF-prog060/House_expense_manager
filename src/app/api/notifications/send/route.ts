@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendPushNotification, sendHouseholdPushNotification } from '@/lib/notifications/push-service';
 import type { NotificationCategory } from '@/lib/notifications/types';
@@ -36,10 +36,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Otherwise check session auth and authorization
     if (!isAuthorized) {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
 
       if (!user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

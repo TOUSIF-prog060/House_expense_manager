@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { calculateShares } from '@/lib/calculations/money';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { expenseSchema } from '@/lib/validation/schemas';
 import { sendHouseholdPushNotification } from '@/lib/notifications/push-service';
@@ -8,7 +8,7 @@ import { sendHouseholdPushNotification } from '@/lib/notifications/push-service'
 export async function POST(request: NextRequest) {
   try {
     const auth = await createClient();
-    const { data: { user } } = await auth.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
 
     const parsed = expenseSchema.safeParse(await request.json());

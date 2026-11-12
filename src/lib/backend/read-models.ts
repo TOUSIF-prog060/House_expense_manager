@@ -1,17 +1,34 @@
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/lib/supabase/database.types';
+
+type HouseholdRow = Database['public']['Tables']['households']['Row'];
 
 export const getHouseholdForUser = cache(async (userId: string) => {
   const supabase = await createClient();
 
-  const { data: membership } = await supabase
-    .from('household_members')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .maybeSingle();
+  // One parallel round trip. RLS already limits household_members and
+  // profiles to the caller's household, so we fetch them alongside the
+  // membership instead of waiting on its household_id; the JS filters below
+  // keep the result correct regardless of what RLS returns.
+  const [membershipRes, membersRes, profilesRes] = await Promise.all([
+    supabase
+      .from('household_members')
+      .select('*, households(*)')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .maybeSingle(),
+    supabase
+      .from('household_members')
+      .select('*')
+      .eq('status', 'active'),
+    supabase
+      .from('profiles')
+      .select('id, display_name, avatar_url, upi_id'),
+  ]);
 
-  if (!membership) {
+  const membershipRow = membershipRes.data;
+  if (!membershipRow) {
     return {
       supabase,
       membership: null,
@@ -21,35 +38,15 @@ export const getHouseholdForUser = cache(async (userId: string) => {
     };
   }
 
-  const [householdRes, membersRes] = await Promise.all([
-    supabase
-      .from('households')
-      .select('*')
-      .eq('id', membership.household_id)
-      .maybeSingle(),
-    supabase
-      .from('household_members')
-      .select('*')
-      .eq('household_id', membership.household_id)
-      .eq('status', 'active'),
-  ]);
-
-  const household = householdRes.data ?? null;
-  const activeMembers = membersRes.data ?? [];
-  const memberUserIds = activeMembers.map((m) => m.user_id);
-
-  const { data: profiles } = memberUserIds.length > 0
-    ? await supabase
-        .from('profiles')
-        .select('id, display_name, avatar_url, upi_id')
-        .in('id', memberUserIds)
-    : { data: [] };
+  const { households: household, ...membership } = membershipRow;
+  const activeMembers = (membersRes.data ?? []).filter((m) => m.household_id === membership.household_id);
+  const memberUserIds = new Set(activeMembers.map((m) => m.user_id));
 
   return {
     supabase,
     membership,
-    household,
-    profiles: profiles ?? [],
+    household: (household as HouseholdRow | null) ?? null,
+    profiles: (profilesRes.data ?? []).filter((p) => memberUserIds.has(p.id)),
     members: activeMembers,
   };
 });

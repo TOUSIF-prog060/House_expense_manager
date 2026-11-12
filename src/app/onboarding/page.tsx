@@ -1,20 +1,13 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { HouseholdOnboarding } from '@/components/household-onboarding';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 
 export const metadata: Metadata = { title: 'Set up your household' };
 
 export default async function OnboardingPage() {
-  let supabase;
-  try {
-    supabase = await createClient();
-  } catch {
-    redirect('/login');
-  }
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const result = await getHouseholdForUser(user.id);

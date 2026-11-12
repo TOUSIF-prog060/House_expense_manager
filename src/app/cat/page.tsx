@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Cat, Clock3, History, PawPrint } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { dateKeyInTimezone } from '@/lib/dates';
 import { FeedButton } from '@/components/feed-button';
@@ -20,13 +20,7 @@ export default async function CatPage({
 }) {
   const { date: paramDate } = await searchParams;
 
-  let auth;
-  try {
-    auth = await createClient();
-  } catch {
-    redirect('/login');
-  }
-  const { data: { user } } = await auth.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const householdData = await getHouseholdForUser(user.id);

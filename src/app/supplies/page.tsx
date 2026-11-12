@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getCurrentUser } from '@/lib/supabase/server';
 import { getHouseholdForUser } from '@/lib/backend/read-models';
 import { HouseholdRealtimeListener } from '@/components/household-realtime-listener';
 import { SuppliesBoard, type SupplyItem } from '@/components/supplies-board';
@@ -18,7 +18,7 @@ export default async function SuppliesPage() {
     redirect('/login');
   }
 
-  const { data: { user } } = await auth.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const householdData = await getHouseholdForUser(user.id);
